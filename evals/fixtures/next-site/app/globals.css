@@ -1,0 +1,16 @@
+* { box-sizing: border-box; }
+body { margin: 0; font: 18px/1.5 system-ui, sans-serif; color: #2b1d4f; background: #fff7ec; }
+h1 { font-size: clamp(48px, 8vw, 120px); line-height: .95; margin: 0 0 24px; }
+h2 { font-size: clamp(32px, 5vw, 64px); margin: 0 0 32px; }
+.btn { display: inline-block; padding: 14px 26px; border-radius: 99px; background: #ff5c8a; color: #fff; text-decoration: none; font-weight: 700; }
+.hero, .features, .pricing, .testimonials, .footer { padding: 12vh 6vw; }
+.hero { min-height: 90vh; display: grid; align-content: center; }
+.features ul { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.plan { background: #fff; border-radius: 24px; padding: 28px; }
+.plan--featured { background: #2b1d4f; color: #fff; }
+.price { font-size: 44px; font-weight: 800; }
+.price span { font-size: 16px; font-weight: 500; }
+.reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.review { margin: 0; background: #fff; border-radius: 20px; padding: 24px; }
+@media (max-width: 767px) { .features ul, .plans, .reviews { grid-template-columns: 1fr; } }

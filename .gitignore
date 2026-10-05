@@ -1,0 +1,25 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Dependencies and build output (e.g. if a fixture is installed to test it)
+node_modules/
+.next/
+dist/
+out/
+
+# Logs and local env
+*.log
+.env
+.env.*
+
+# Test runs and scratch output (keep these outside the repo)
+*-workspace/
+iteration-*/
+review*.html

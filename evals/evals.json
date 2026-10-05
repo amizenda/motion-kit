@@ -1,0 +1,32 @@
+{
+  "skill_name": "motion-kit",
+  "evals": [
+    {
+      "id": 1,
+      "name": "roastery-full",
+      "prompt": "I've got a landing page for my coffee roastery in this folder: {project}. I want to add animations so it feels premium and alive, but not gimmicky. Can you sort that out?",
+      "expected_output": "Agent inventories the 9 sections, asks a global question round (preset/intro/density/smooth scroll) and per-section questions with 2-4 options each (recommended first), then installs motion-kit (head snippet, CSS, scripts in order, MK.init + MK.start) and applies data-mk effects that match the chosen answers, respecting accessibility and the pitfalls checklist.",
+      "files": [
+        "evals/fixtures/roastery"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "portfolio-specific",
+      "prompt": "My photography portfolio is at {project}. Make the 'Selected work' gallery feel like the nova site — pictures should wipe in from the side and drift slowly inside their frames — and turn the case studies row into a horizontal scroll section that moves as you scroll down. Leave the rest of the page calm.",
+      "expected_output": "Agent does not re-ask about the gallery and case studies (already specified), uses the calm preset (nova), applies clip-reveal (from left/right) + parallax to the gallery and the horizontal effect to the case studies with a correct data-mk-track, keeps other sections minimal, and verifies.",
+      "files": [
+        "evals/fixtures/portfolio"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "next-playful",
+      "prompt": "Next.js site at {project} (App Router). Add scroll animations to the pricing and testimonials sections — playful style, it's a kids' app. Don't touch other sections.",
+      "expected_output": "Agent follows the React/Next guide: copies the kit into lib/motion-kit, creates init.ts with module injection and preset playful, adds the head snippet with suppressHydrationWarning, uses MotionScope (MK.start/MK.stop) or useMotion, keeps pricing restrained (no pins), gives testimonials a playful effect (marquee with pause control, pendulum or tilted stagger), touches nothing else.",
+      "files": [
+        "evals/fixtures/next-site"
+      ]
+    }
+  ]
+}

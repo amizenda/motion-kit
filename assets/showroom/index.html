@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en" data-mk-preset="editorial">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>motion-kit showroom</title>
+<!-- motion-kit head snippet: must stay inline in <head>, before any CSS -->
+<script>
+  (function (d, w) {
+    var h = d.documentElement, q = w.location.search;
+    h.classList.add('mk-js');
+    var m = /[?&]preset=(\w+)/.exec(q); if (m) h.setAttribute('data-mk-preset', m[1]);
+    var reduce = /[?&]mk-reduce\b/.test(q) || (!/[?&]mk-motion\b/.test(q) && w.matchMedia && w.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!reduce) {
+      h.classList.add('mk-motion');
+      w.__mkFailsafe = setTimeout(function () { if (!(w.MK && w.MK.started)) h.classList.add('mk-failsafe'); }, 4000);
+    }
+  })(document, window);
+</script>
+<link rel="stylesheet" href="../motion-kit.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: #f4f1ea; color: #161513; }
+  body { margin: 0; font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow-x: clip; }
+  img { display: block; max-width: 100%; }
+  a { color: inherit; }
+  h1, h2, h3 { margin: 0; font-weight: 750; letter-spacing: -.035em; line-height: 1; }
+  p { margin: 0; }
+  .d1 { font-size: clamp(46px, 8.4vw, 132px); }
+  .d2 { font-size: clamp(34px, 5.4vw, 84px); }
+  .d3 { font-size: clamp(24px, 3vw, 42px); }
+  .wrap { width: min(1180px, 100% - 48px); margin-inline: auto; }
+  .demo { padding: 16vh 0; }
+  .demo + .demo { padding-top: 4vh; }
+  .stack > * + * { margin-top: 12vh; }
+  .tag { display: inline-block; margin-bottom: 18px; padding: 6px 11px; border: 1px solid currentColor; border-radius: 99px; font: 600 11px/1 ui-monospace, Consolas, monospace; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+  .lead { max-width: 56ch; margin-top: 18px; font-size: 18px; opacity: .8; }
+  .dark { background: #141311; color: #f4f1ea; }
+  .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .frame { position: relative; overflow: hidden; border-radius: 14px; aspect-ratio: 4 / 3; background: #ddd5c6; }
+  .frame img { width: 100%; height: 100%; object-fit: cover; }
+  figcaption { margin-top: 10px; font-size: 13px; opacity: .7; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; padding: 15px 26px; border: 0; border-radius: 99px; background: #161513; color: #f4f1ea; font: 600 15px/1 system-ui, sans-serif; text-decoration: none; cursor: pointer; }
+  .btn--light { background: #f4f1ea; color: #161513; }
+  .btn:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid #e0572b; outline-offset: 3px; }
+
+  /* chrome */
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; transition: background .35s, color .35s, padding .35s; }
+  .nav.is-scrolled { background: rgba(244, 241, 234, .88); backdrop-filter: blur(10px); padding: 12px 24px; }
+  .nav[data-mk-on-theme="dark"] { color: #f4f1ea; background: rgba(20, 19, 17, .55); }
+  .nav b { font-size: 18px; letter-spacing: -.02em; }
+  .nav .nav-tag { margin: 0 0 0 10px; vertical-align: middle; letter-spacing: .06em; }
+  @media (max-width: 767px) { .nav .nav-tag { display: none; } }
+  .nav .cart { display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border: 1px solid currentColor; border-radius: 99px; text-decoration: none; font-weight: 600; }
+  .progress { position: fixed; top: 0; left: 0; z-index: 60; width: 100%; height: 3px; background: #e0572b; }
+  .panel { position: fixed; right: 14px; bottom: 14px; z-index: 70; display: grid; gap: 6px; padding: 12px; border-radius: 14px; background: rgba(20, 19, 17, .9); color: #f4f1ea; font: 12px/1.3 ui-monospace, Consolas, monospace; max-width: 260px; }
+  .panel a { color: #f4f1ea; }
+  .panel b { color: #e0a17b; }
+
+  /* hero */
+  .hero { position: relative; height: 100vh; height: 100svh; padding: 12px; }
+  .hero-frame { position: absolute; inset: 12px; overflow: hidden; border-radius: 22px; }
+  .hero-frame img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-copy { position: absolute; left: 6vw; bottom: 9vh; z-index: 2; color: #fff; max-width: 70vw; }
+  .hero-copy p { margin-top: 18px; font-size: 18px; max-width: 46ch; }
+
+  /* text */
+  .rule { height: 2px; border: 0; background: currentColor; margin: 0; }
+  .stats b { display: block; font-size: clamp(44px, 6vw, 88px); letter-spacing: -.04em; }
+  .ribbon { width: 100%; height: auto; overflow: visible; font: 800 34px system-ui, sans-serif; color: #3a2340; letter-spacing: .04em; }
+
+  /* media */
+  .frame--tall { aspect-ratio: 3 / 4; }
+  .frame--wide { aspect-ratio: 21 / 9; }
+  .wg { height: 100vh; height: 100svh; color: #245C3E; }
+  .wg-copy { position: absolute; left: 6vw; bottom: 8vh; color: #fff; }
+  .gi h2 { white-space: nowrap; }
+  .mark { position: absolute; font: 600 13px/1.2 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #245C3E; }
+  .mark--tl { top: 90px; left: 24px; } .mark--br { right: 24px; bottom: 28px; }
+  .zt-card { position: absolute; right: 24px; bottom: 7vh; width: min(440px, 100% - 48px); padding: 28px; border-radius: 18px; background: rgba(244, 241, 234, .94); }
+
+  /* scroll */
+  .blob { width: 30vw; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffcfa8, #e0572b 70%); position: absolute; right: -6vw; top: 10%; opacity: .5; pointer-events: none; }
+  .depth { position: relative; height: 130vh; overflow: hidden; }
+  .depth .layer { position: absolute; }
+  .depth .far { inset: -8% -6%; width: 112%; height: 116%; object-fit: cover; opacity: .55; }
+  .depth .back { left: 8vw; top: 26%; opacity: .5; }
+  .depth .mid { left: 20vw; top: 40%; width: 46vw; border-radius: 18px; }
+  .depth .front { right: 8vw; top: 60%; color: #e0572b; }
+  .depth .near { right: 10vw; top: 14%; width: 22vw; border-radius: 18px; }
+  .pcf { height: 100vh; height: 100svh; overflow: hidden; }
+  .pcf-frames { position: absolute; inset: 0; }
+  .pcf-caps { position: absolute; left: 6vw; bottom: 9vh; z-index: 2; color: #fff; }
+  .pcf-bar { position: absolute; left: 6vw; right: 6vw; bottom: 5vh; z-index: 2; height: 2px; background: #fff; display: block; }
+  .ps { min-height: 100vh; display: grid; align-items: center; padding: 10vh 0; }
+  .ps-step { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .ps-media { aspect-ratio: 4 / 5; border-radius: 18px; overflow: hidden; }
+  .ps-media img { width: 100%; height: 100%; object-fit: cover; }
+  .ps-text > * + * { margin-top: 14px; }
+  .ps-rail { position: absolute; left: 24px; top: 25vh; width: 2px; height: 50vh; background: rgba(0, 0, 0, .12); }
+  .ps-rail i { position: absolute; inset: 0; background: #e0572b; }
+  .ps-dots { position: absolute; left: 40px; top: 50%; translate: 0 -50%; display: grid; gap: 10px; }
+  .ps-dots button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid currentColor; background: transparent; cursor: pointer; font: 600 12px/1 system-ui; }
+  .ps-dots .is-on { background: #161513; color: #f4f1ea; }
+  .ps-dots .is-now { background: #e0572b; border-color: #e0572b; }
+  .ss { display: grid; grid-template-columns: 1fr 1fr; }
+  .ss-sticky { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+  .ss-bar { position: absolute; left: 24px; right: 24px; bottom: 24px; height: 2px; background: #fff; z-index: 9; display: block; }
+  .ss-step { min-height: 100vh; display: grid; align-content: center; gap: 14px; padding: 0 6vw; }
+  .hz { height: 100vh; height: 100svh; display: flex; align-items: center; }
+  .hz-track { gap: 4vw; padding: 0 6vw; align-items: center; }
+  .hz-intro { width: 38vw; }
+  .hz-card { width: 32vw; margin: 0; }
+  .hz-shot { aspect-ratio: 4 / 5; overflow: hidden; border-radius: 14px; }
+  .hz-shot img { width: 118%; max-width: none; height: 100%; object-fit: cover; margin-left: -9%; }
+  .sa { padding: 12vh 0; }
+  .sa-row { gap: 16px; margin-top: 6vh; }
+  .sa-card { width: 30vw; min-width: 260px; height: 62vh; padding: 26px; border-radius: 18px; color: #fff; display: flex; flex-direction: column; justify-content: space-between; }
+  .sac { min-height: 100vh; display: grid; align-items: center; padding: 8vh 0; }
+  .sac-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 48px; align-items: start; }
+  .sac-item { border-top: 1px solid rgba(0, 0, 0, .2); padding: 14px 0; }
+  .sac-item h3 { font-size: clamp(22px, 2.6vw, 36px); padding-bottom: 12px; }
+  .sac-item img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 12px; margin: 6px 0 12px; }
+  .cs { min-height: 100vh; display: grid; align-items: center; }
+  .cs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .cs-deck { width: min(380px, 80vw); justify-self: center; }
+  .mk-cs-on .cs-deck { aspect-ratio: 4 / 5; }
+  .cs-card { padding: 28px; border-radius: 22px; color: #fff; font-size: 28px; font-weight: 750; min-height: 180px; }
+  html:not(.mk-motion) .cs-card + .cs-card { margin-top: 16px; }
+  .sb { min-height: 100vh; display: grid; align-items: center; }
+  .sb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+  .sb-steps li { opacity: .35; font-size: 28px; font-weight: 700; transition: opacity .4s; }
+  .sb-steps li.is-active { opacity: 1; }
+  .sb-ticket { position: relative; background: #fff; padding: 28px; border-radius: 6px; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .35); font: 15px/2 ui-monospace, Consolas, monospace; }
+  .sb-stamp { position: absolute; right: 22px; top: 22px; padding: 6px 14px; border: 3px solid #c8341c; color: #c8341c; font: 800 26px/1 system-ui; letter-spacing: .08em; border-radius: 6px; }
+  .st { display: grid; grid-template-columns: 1fr 1.2fr; gap: 6vw; }
+  .st-panel { position: sticky; top: 22vh; align-self: start; }
+  .st-big { font-size: clamp(64px, 10vw, 150px); font-weight: 800; letter-spacing: -.05em; line-height: 1; }
+  .st-big small { font-size: .4em; }
+  .st-row { min-height: 55vh; padding: 28px 0; border-top: 1px solid rgba(0, 0, 0, .2); }
+  .quote { position: relative; z-index: 2; background: #f4f1ea; min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 10vh 6vw; }
+  .footer { position: relative; z-index: 1; margin-top: -22vh; min-height: 122vh; padding: 30vh 6vw 6vh; overflow: hidden; }
+  .footer .tiles { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .14; pointer-events: none; }
+  .footer-inner { position: relative; z-index: 1; }
+  .wordmark { margin-top: 12vh; font-size: 22vw; font-weight: 850; letter-spacing: -.06em; line-height: .8; white-space: nowrap; }
+  .sticker { width: 96px; border-radius: 50%; }
+
+  /* collections */
+  .card { background: #fff; border-radius: 18px; padding: 16px; }
+  .card h3 { font-size: 22px; margin: 14px 0 12px; }
+  .card-media { aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; }
+  .card-media img { width: 100%; height: 100%; object-fit: cover; }
+  .menu { list-style: none; margin: 0; padding: 0; }
+  .menu li { display: flex; justify-content: space-between; padding: 22px 0; border-top: 1px solid rgba(0, 0, 0, .2); font-size: clamp(22px, 3vw, 40px); font-weight: 700; letter-spacing: -.02em; }
+  .fa { height: 68vh; gap: 12px; display: grid; grid-template-columns: 1fr 1fr; }
+  .fa-col { position: relative; overflow: hidden; border-radius: 16px; background: #e6e0d4; padding: 22px; display: flex; align-items: flex-end; }
+  .fa-col h3 { position: relative; z-index: 1; font-size: 26px; color: #161513; }
+  .fa-col.is-open h3 { color: #fff; }
+  .fa-media { position: absolute; inset: 0; }
+  .fa-media img { width: 100%; height: 100%; object-fit: cover; }
+  .orbit { text-align: center; }
+  .orbit [data-mk-item] { width: min(22vw, 240px); margin: 0; }
+  .orbit [data-mk-item] img { border-radius: 16px; }
+  .orbit-name { font-size: 24px; font-weight: 700; margin-top: 12px; }
+  .ctrl { display: inline-flex; gap: 10px; margin-top: 14px; }
+  .ctrl button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid currentColor; background: transparent; cursor: pointer; font-size: 18px; }
+  .ctrl button:disabled { opacity: .3; }
+  .dc-track { gap: 18px; }
+  .dc-slide { width: 280px; background: #fff; border-radius: 18px; padding: 14px; }
+  .dc-slide img { border-radius: 12px; aspect-ratio: 5 / 4; object-fit: cover; width: 100%; }
+  .mq { position: relative; padding: 4vh 0; font-size: clamp(40px, 7vw, 110px); font-weight: 850; letter-spacing: -.04em; border-block: 1px solid currentColor; }
+  .mq-toggle { position: absolute; right: 12px; top: 8px; padding: 6px 12px; border-radius: 99px; border: 1px solid currentColor; background: #f4f1ea; font: 600 12px/1 system-ui; cursor: pointer; }
+  .pend { padding: 2vh 0 8vh; }
+  .pend-track { gap: 22px; padding: 0 6vw; border-top: 3px solid #8b2fa0; }
+  .pend-card { width: 240px; margin-top: 18px; padding: 22px; border-radius: 10px; background: #fff; box-shadow: 0 18px 30px -18px rgba(0, 0, 0, .35); }
+  .stars { position: relative; display: inline-block; color: #d8d0c2; font-size: 34px; letter-spacing: 4px; }
+  .stars-fill { position: absolute; inset: 0; color: #e0572b; }
+  .tiltcard { position: relative; overflow: hidden; aspect-ratio: 16 / 10; border-radius: 22px; background: linear-gradient(135deg, #f59db4, #8b2fa0); display: grid; place-items: center; color: #fff; }
+  .tiltcard b { font-size: clamp(30px, 4vw, 56px); letter-spacing: -.03em; }
+  .row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+
+  @media (max-width: 767px) {
+    .ps-step, .ss, .sac-grid, .cs-grid, .sb-grid, .st { grid-template-columns: 1fr; }
+    .ss-sticky { height: 60vh; }
+    .fa { grid-template-columns: 1fr; height: auto; }
+    .fa-col { min-height: 40vh; }
+    .hz-intro { width: 80vw; } .hz-card { width: 72vw; }
+    .sa-card { width: 78vw; }
+    .ps-rail, .ps-dots { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- optional intro overlays: ?intro=arch | drop | curtain  (default: intro-window on the hero frame) -->
+<div class="ov" data-intro="arch" hidden><div style="text-align:center"><span class="d1" data-mk-arch-title style="display:block;letter-spacing:.06em">SOLENNE</span><em data-mk-arch-tag style="display:inline-block;font-size:22px">Houses on the hill</em></div></div>
+<div data-intro="drop" data-mk-target="#top" hidden></div>
+<div data-intro="curtain" data-mk-steps="Lighting the charcoal|Sharpening the knives|Reducing the sauce|Firing the first ticket" hidden>
+  <div data-mk-loader-mid style="text-align:center"><b class="d1"><span data-mk-loader-count>0</span>%</b><br><span class="mk-mask"><span data-mk-loader-step style="display:inline-block"></span></span></div>
+</div>
+
+<div class="progress" data-mk="scroll-progress"></div>
+<div data-mk="cursor"></div>
+
+<nav class="nav" data-mk="nav-state nav-hide" data-mk-intro-item>
+  <b>motion-kit <span class="tag nav-tag">U1 nav-hide · U2 nav-state</span></b>
+  <a class="cart" href="#collections" data-mk-cart>Bag <span data-cart-count>0</span></a>
+</nav>
+
+<aside class="panel" aria-label="Showroom options">
+  <span>preset: <b id="pname">editorial</b></span>
+  <span><a href="?preset=calm">calm</a> · <a href="?preset=editorial">editorial</a> · <a href="?preset=liquid">liquid</a> · <a href="?preset=warm">warm</a> · <a href="?preset=playful">playful</a></span>
+  <span>intro: <a href="?intro=window">window</a> · <a href="?intro=arch">arch</a> · <a href="?intro=drop">drop</a> · <a href="?intro=curtain">curtain</a></span>
+  <span>preview swap: <a href="?swap=pop">pop</a> · <a href="?swap=wipe">wipe</a> · <a href="?swap=fade">fade</a></span>
+  <span><a href="?mk-reduce">reduced motion</a> · <a href="?grain">grain</a> · <a href="?mk-debug">markers</a></span>
+</aside>
+
+<!-- ═════════ HERO · I1 intro-window · S1 hero-exit · T1 line-rise (on intro) ═════════ -->
+<header class="hero" id="top" data-mk="hero-exit" data-mk-theme="dark">
+  <div class="hero-frame" data-mk="intro-window" data-mk-push>
+    <img data-ph="2000x1250|#c9a27a|#3b2a1f|" alt="">
+  </div>
+  <div class="hero-copy" data-mk-exit>
+    <span class="tag" data-mk-intro-item>I1 intro-window · S1 hero-exit · T1 line-rise</span>
+    <h1 class="d1" data-mk="line-rise" data-mk-on="intro">Motion kit<br>showroom</h1>
+    <p data-mk-intro-item>Every effect on this page is applied with a single <code>data-mk</code> attribute. Switch presets in the panel.</p>
+  </div>
+</header>
+
+<!-- ═════════ TEXT ═════════ -->
+<section class="demo" id="text">
+  <div class="wrap stack">
+    <div><span class="tag">T1 line-rise</span><h2 class="d2" data-mk="line-rise">Lines rise out of their own masks, one after another.</h2></div>
+    <div><span class="tag">T2 word-rise</span><h2 class="d2" data-mk="word-rise">Every word climbs from its own little window.</h2></div>
+    <div><span class="tag">T3 char-flip · axis y</span><h2 class="d1" data-mk="char-flip">SOLENNE</h2></div>
+    <div><span class="tag">T3 char-flip · axis x (hinge)</span><h2 class="d1" data-mk="char-flip" data-mk-axis="x">Reasons</h2></div>
+    <div><span class="tag">T4 blur-rise</span><h2 class="d2" data-mk="blur-rise">Out of the fog, into focus.</h2></div>
+    <div><span class="tag">T5 focus-in</span><h2 class="d2" data-mk="focus-in">Less routine. More skin.</h2></div>
+    <div><span class="tag">T6 scroll-fill</span><p class="d3" data-mk="scroll-fill" style="max-width:24ch">We cook over fire because nothing else tastes like it: the char, the smoke, the slow patience of embers that turn a simple cut into something you remember.</p></div>
+    <div><span class="tag">T7 letter-drop · scrubbed</span><h2 class="d1" data-mk="letter-drop" data-mk-fizz>Kingdom</h2></div>
+    <div><span class="tag">T8 write-on</span><p class="d2"><em data-mk="write-on" style="font-family:Georgia,serif;font-weight:400">stay for lunch</em></p></div>
+    <div>
+      <span class="tag">T9 count-up</span>
+      <div class="grid stats">
+        <div><b data-mk="count-up">900°</b><span>oven heat</span></div>
+        <div><b data-mk="count-up">38 min</b><span>to your door</span></div>
+        <div><b data-mk="count-up" data-mk-pad="2">07</b><span>grills</span></div>
+        <div><b data-mk="count-up">12,480</b><span>tickets</span></div>
+      </div>
+    </div>
+    <div><span class="tag">T10 word-cycle</span><p class="d3">On the grill: <span data-mk="word-cycle" data-mk-words="Firecracker Chicken|Smoked Brisket Bun|Burnt Basque Cheesecake|Corn" style="color:#e0572b">Firecracker Chicken</span></p></div>
+    <div><span class="tag">T11 rule-draw</span><hr class="rule" data-mk="rule-draw"></div>
+    <div>
+      <span class="tag">T12 text-path</span>
+      <svg class="ribbon" data-mk="text-path" data-mk-text="BARRIER FIRST · LESS ROUTINE · MORE SKIN ·" data-mk-speed="70" data-mk-draw data-mk-on="scroll" viewBox="0 0 1200 380">
+        <path id="ribbon-path" d="M-80 130 C 200 30, 360 340, 600 300 S 1010 50, 1280 140" fill="none" stroke="#f7b6e8" stroke-width="72" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ MEDIA ═════════ -->
+<section class="demo" id="media">
+  <div class="wrap stack">
+    <div>
+      <span class="tag">M1 clip-reveal · from bottom / left / center / circle</span>
+      <div class="grid">
+        <figure style="margin:0"><div class="frame" data-mk="clip-reveal"><img data-ph="1200x900|#7aa59a|#1f3b36|bottom" alt=""></div><figcaption>data-mk-from="bottom" (default)</figcaption></figure>
+        <figure style="margin:0"><div class="frame" data-mk="clip-reveal" data-mk-from="left"><img data-ph="1200x900|#d7a36b|#5b2f1a|left" alt=""></div><figcaption>data-mk-from="left"</figcaption></figure>
+        <figure style="margin:0"><div class="frame" data-mk="clip-reveal" data-mk-from="center"><img data-ph="1200x900|#9a8fd1|#2a2350|center" alt=""></div><figcaption>data-mk-from="center"</figcaption></figure>
+        <figure style="margin:0"><div class="frame" data-mk="clip-reveal" data-mk-from="circle"><img data-ph="1200x900|#e48a9d|#4f1a2a|circle" alt=""></div><figcaption>data-mk-from="circle"</figcaption></figure>
+      </div>
+    </div>
+    <div><span class="tag">M1 clip-reveal · scrubbed from centre</span><div class="frame frame--wide" data-mk="clip-reveal" data-mk-from="center" data-mk-scrub><img data-ph="2100x900|#bfa98a|#2b241c|scrubbed" alt=""></div></div>
+    <div>
+      <span class="tag">M2 parallax · M3 settle · M7 velocity-skew</span>
+      <div class="grid">
+        <div class="frame frame--tall"><img data-mk="parallax" data-mk-amount="0.12" data-ph="900x1200|#5f7f9c|#14202b|parallax" alt=""></div>
+        <div class="frame frame--tall"><img data-mk="settle" data-mk-from="0.8" data-ph="900x1200|#c78f6d|#3b2014|settle" alt=""></div>
+        <div class="frame frame--tall"><img data-mk="velocity-skew" data-ph="900x1200|#8fae74|#1f2c15|skew" alt=""></div>
+      </div>
+    </div>
+    <div>
+      <span class="tag">M8 lightbox (click a picture)</span>
+      <div class="grid">
+        <div class="frame" data-mk="lightbox" data-mk-caption="Pacific House"><img data-ph="1600x1000|#7f9fb5|#1d2a36|Pacific" alt="Pacific House"></div>
+        <div class="frame" data-mk="lightbox" data-mk-caption="Desert Light"><img data-ph="1600x1000|#d9b07a|#4a2d14|Desert" alt="Desert Light"></div>
+        <div class="frame" data-mk="lightbox" data-mk-caption="Garden Villa"><img data-ph="1600x1000|#86b08b|#1d3321|Garden" alt="Garden Villa"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wg" data-mk="window-grow" data-mk-ring-color="#245C3E" data-mk-theme="dark">
+  <div data-mk-window><img data-ph="2000x1250|#f0b27a|#7a2e3c|cheers" alt=""></div>
+  <div class="wg-copy" data-mk-after><span class="tag">M4 window-grow</span><h2 class="d2">Raise a zero.</h2></div>
+</section>
+
+<section class="gi" data-mk="grow-inline">
+  <h2 class="d1"><span data-mk-left>Four</span><span data-mk-media><img data-ph="1600x1000|#9cb5a4|#22352b|" alt=""></span><span data-mk-right>houses</span></h2>
+</section>
+
+<section data-mk="zoom-through" data-mk-color="#E4F76B" data-mk-ring-color="#245C3E">
+  <div data-mk-scene><img data-ph="2000x1250|#f2d3a3|#7c8f5a|inside" alt=""></div>
+  <div data-mk-marks><span class="mark mark--tl">N°0 — the zero-proof edition</span><span class="mark mark--br">Scroll to step inside ↓</span></div>
+  <div class="zt-card" data-mk-after><span class="tag">M6 zoom-through</span><h2 class="d3">Zero proof. Full flavour.</h2></div>
+</section>
+
+<!-- ═════════ SCROLL SET PIECES ═════════ -->
+<section class="demo" style="overflow:hidden">
+  <div class="blob" data-mk="drift" data-mk-from="-40" data-mk-to="40"></div>
+  <div class="wrap"><span class="tag">S2 drift</span><h2 class="d2" style="max-width:14ch">The blob drifts against the scroll.</h2></div>
+</section>
+
+<section class="depth dark" data-mk="depth-layers" data-mk-travel="22" data-mk-theme="dark">
+  <img class="layer far" data-mk-depth="-0.4" data-ph="2000x1300|#3c4b5c|#0d1218|" alt="">
+  <h2 class="layer back d1" data-mk-depth="2.4">Desert</h2>
+  <img class="layer mid" data-mk-depth="0.6" data-ph="1400x800|#d0a06c|#4a2b16|mid" alt="">
+  <h2 class="layer front d1" data-mk-depth="5">Light.</h2>
+  <img class="layer near" data-mk-depth="1.4" data-ph="700x900|#e7c9a0|#6a4425|near" alt="">
+  <span class="tag" style="position:absolute;left:24px;bottom:24px">S3 depth-layers</span>
+</section>
+
+<section class="pcf dark" data-mk="pin-crossfade" data-mk-theme="dark">
+  <div class="pcf-frames" data-mk-frames>
+    <img data-mk-frame data-ph="2000x1250|#6d8aa0|#101a22|01" alt="">
+    <img data-mk-frame data-ph="2000x1250|#b58a62|#2c1a0e|02" alt="">
+    <img data-mk-frame data-ph="2000x1250|#7e9c6f|#18240f|03" alt="">
+    <img data-mk-frame data-ph="2000x1250|#a77fa8|#26122a|04" alt="">
+  </div>
+  <div class="pcf-caps" data-mk-captions>
+    <p class="d3" data-mk-caption>S4 pin-crossfade · 01 Arrival</p>
+    <p class="d3" data-mk-caption>02 The courtyard</p>
+    <p class="d3" data-mk-caption>03 The garden</p>
+    <p class="d3" data-mk-caption>04 Night</p>
+  </div>
+  <i class="pcf-bar" data-mk-bar></i>
+</section>
+
+<section class="ps" data-mk="pin-steps">
+  <div class="ps-rail"><i data-mk-rail-fill></i></div>
+  <nav class="ps-dots" aria-label="Steps"><button data-mk-dot>1</button><button data-mk-dot>2</button><button data-mk-dot>3</button></nav>
+  <div class="wrap ps-steps" data-mk-steps>
+    <article class="ps-step" data-mk-step>
+      <div class="ps-media" data-mk-step-media><img data-ph="1000x1250|#a7c4a0|#24331f|1" alt=""></div>
+      <div class="ps-text" data-mk-step-text><span class="tag">S5 pin-steps</span><h3 class="d2">Rosemary spritz</h3><p class="lead">Pinned on desktop. Each step wipes its photo up over the last; scroll snaps to steps; the dots jump.</p></div>
+    </article>
+    <article class="ps-step" data-mk-step>
+      <div class="ps-media" data-mk-step-media><img data-ph="1000x1250|#f0b48c|#5a2b17|2" alt=""></div>
+      <div class="ps-text" data-mk-step-text><span class="tag">step 2</span><h3 class="d2">Grapefruit tonic</h3><p class="lead">Old text slides up and out, new text slides up in.</p></div>
+    </article>
+    <article class="ps-step" data-mk-step>
+      <div class="ps-media" data-mk-step-media><img data-ph="1000x1250|#9fa8d6|#1f2346|3" alt=""></div>
+      <div class="ps-text" data-mk-step-text><span class="tag">step 3</span><h3 class="d2">Juniper long</h3><p class="lead">The rail fills across the whole pin.</p></div>
+    </article>
+  </div>
+</section>
+
+<section class="ss" data-mk="sticky-steps" data-mk-theme="dark">
+  <div><div class="ss-sticky">
+    <img data-mk-step-media data-ph="1200x1500|#c9b28f|#2c2216|cleanse" alt="">
+    <img data-mk-step-media data-ph="1200x1500|#8fb2c9|#16222c|treat" alt="">
+    <img data-mk-step-media data-ph="1200x1500|#c98fa7|#2c1620|protect" alt="">
+    <i class="ss-bar" data-mk-bar></i>
+  </div></div>
+  <div class="dark">
+    <article class="ss-step" data-mk-step><span class="tag">S6 sticky-steps</span><h3 class="d2">Cleanse</h3><p class="lead">The media column is CSS sticky. As each text block arrives, its photo opens from the centre.</p></article>
+    <article class="ss-step" data-mk-step><h3 class="d2">Treat</h3><p class="lead">Scroll-linked, not timed.</p></article>
+    <article class="ss-step" data-mk-step><h3 class="d2">Protect</h3><p class="lead">A progress bar spans the section.</p></article>
+  </div>
+</section>
+
+<section class="hz" data-mk="horizontal">
+  <div class="hz-track" data-mk-track>
+    <div class="hz-intro"><span class="tag">S7 horizontal (+ nested M1, data-mk-h-parallax)</span><h2 class="d2">Ten minutes to the old town</h2></div>
+    <figure class="hz-card"><div class="hz-shot" data-mk="clip-reveal" data-mk-from="left"><img data-mk-h-parallax="6" data-ph="1000x1250|#86a8bf|#162430|harbour" alt=""></div><figcaption>Harbour</figcaption></figure>
+    <figure class="hz-card"><div class="hz-shot" data-mk="clip-reveal" data-mk-from="left"><img data-mk-h-parallax="6" data-ph="1000x1250|#c6a37c|#33220f|old town" alt=""></div><figcaption>Old town</figcaption></figure>
+    <figure class="hz-card"><div class="hz-shot" data-mk="clip-reveal" data-mk-from="left"><img data-mk-h-parallax="6" data-ph="1000x1250|#93b48a|#1d2d16|market" alt=""></div><figcaption>Market</figcaption></figure>
+    <figure class="hz-card"><div class="hz-shot" data-mk="clip-reveal" data-mk-from="left"><img data-mk-h-parallax="6" data-ph="1000x1250|#b393c0|#2a1832|beach" alt=""></div><figcaption>Beach</figcaption></figure>
+  </div>
+</section>
+
+<section class="sa" data-mk="stack-accordion">
+  <div class="wrap"><span class="tag">S8 stack-accordion</span><h2 class="d2">Six ingredients</h2></div>
+  <div class="wrap sa-row" data-mk-row>
+    <article class="sa-card" data-mk-card style="background:#2d3a5c"><h3 class="d3">Ceramides</h3><p>Mortar for the skin's brick wall.</p></article>
+    <article class="sa-card" data-mk-card style="background:#6b3a5c"><h3 class="d3">Niacinamide</h3><p>Calms redness at 4%.</p></article>
+    <article class="sa-card" data-mk-card style="background:#3a5c4b"><h3 class="d3">Beta-glucan</h3><p>Oat-derived moisture film.</p></article>
+    <article class="sa-card" data-mk-card style="background:#5c4b3a"><h3 class="d3">Squalane</h3><p>Sugarcane-derived, nothing else.</p></article>
+    <article class="sa-card" data-mk-card style="background:#3a4b5c"><h3 class="d3">Panthenol</h3><p>Pro-vitamin B5 cushion.</p></article>
+    <article class="sa-card" data-mk-card style="background:#1c1c1c"><h3 class="d3">Zinc PCA</h3><p>Balances oil without parching.</p></article>
+  </div>
+</section>
+
+<section class="sac" data-mk="scroll-accordion">
+  <div class="wrap sac-grid">
+    <div><span class="tag">S9 scroll-accordion</span><h2 class="d2">Flavour lab</h2></div>
+    <div>
+      <article class="sac-item" data-mk-item><h3 data-mk-item-title>Strawberry fizz</h3><div><img data-ph="1600x900|#f39aa8|#7a1f33|" alt=""><p>Freeze-dried berries folded through sour sugar.</p></div></article>
+      <article class="sac-item" data-mk-item><h3 data-mk-item-title>Salty liquorice</h3><div><img data-ph="1600x900|#5b4f5f|#120d13|" alt=""><p>Nordic salmiak, rolled thin.</p></div></article>
+      <article class="sac-item" data-mk-item><h3 data-mk-item-title>Cloudberry cream</h3><div><img data-ph="1600x900|#f6c27e|#7a4a12|" alt=""><p>Marshmallow twist with cloudberry jam.</p></div></article>
+      <article class="sac-item" data-mk-item><h3 data-mk-item-title>Mint sherbet</h3><div><img data-ph="1600x900|#9ed9c3|#1f5a46|" alt=""><p>Fizz that crackles on the tongue.</p></div></article>
+    </div>
+  </div>
+</section>
+
+<section class="cs" data-mk="card-stack">
+  <div class="wrap cs-grid">
+    <div><span class="tag">S10 card-stack</span><h2 class="d2">The label promise</h2><p class="lead">The last card in the markup is the front card.</p></div>
+    <div class="cs-deck" data-mk-deck>
+      <div class="cs-card" data-mk-card style="background:#8b2fa0">5 · Made on the pier</div>
+      <div class="cs-card" data-mk-card style="background:#e23d55">4 · No palm oil</div>
+      <div class="cs-card" data-mk-card style="background:#3c8a6e">3 · Real fruit</div>
+      <div class="cs-card" data-mk-card style="background:#e0812b">2 · Small batches</div>
+      <div class="cs-card" data-mk-card style="background:#2d3a5c">1 · Nothing artificial</div>
+    </div>
+  </div>
+</section>
+
+<section class="sb" data-mk="sequence-build">
+  <div class="wrap sb-grid">
+    <div><span class="tag">S11 sequence-build</span><ol class="sb-steps"><li data-mk-seq-step>Order in</li><li data-mk-seq-step>On the grill</li><li data-mk-seq-step>Out the door</li></ol></div>
+    <div class="sb-ticket" data-mk-print>
+      <p data-mk-seq>ORDER #0427 · 21:14</p><p data-mk-seq>1× Firecracker chicken</p><p data-mk-seq>2× Smoked brisket bun</p><p data-mk-seq>1× Charred corn</p>
+      <p data-mk-seq>1× Burnt Basque cheesecake</p><p data-mk-seq>— extra chilli</p><p data-mk-seq>TOTAL £48.50</p>
+      <span class="sb-stamp" data-mk-stamp>FIRED</span>
+    </div>
+  </div>
+</section>
+
+<section class="demo">
+  <div class="wrap st" data-mk="sticky-stats">
+    <aside class="st-panel"><span class="tag">S12 sticky-stats</span><div class="st-big" data-mk-stat-window aria-hidden="true">0.0<small>%</small></div><p data-mk-stat-label>alcohol by volume</p><div data-mk-stat-dots></div></aside>
+    <div>
+      <article class="st-row" data-mk-stat-row data-mk-value="0" data-mk-decimals="1" data-mk-unit="%" data-mk-label="alcohol by volume"><h3 class="d3">Zero proof</h3><p class="lead">0.0% ABV, all of the bite.</p></article>
+      <article class="st-row" data-mk-stat-row data-mk-value="3" data-mk-label="botanicals per bottle"><h3 class="d3">Three botanicals</h3><p class="lead">Each distilled on its own.</p></article>
+      <article class="st-row" data-mk-stat-row data-mk-value="30" data-mk-unit="kcal" data-mk-label="per serve"><h3 class="d3">Light</h3><p class="lead">30 kcal a serve.</p></article>
+      <article class="st-row" data-mk-stat-row data-mk-value="1" data-mk-label="farm"><h3 class="d3">One farm</h3><p class="lead">Grown in a single garden.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ COLLECTIONS & UI ═════════ -->
+<section class="demo" id="collections">
+  <div class="wrap stack">
+    <div>
+      <span class="tag">C1 stagger-up · data-mk-tilt="2"</span>
+      <div class="grid" data-mk="stagger-up" data-mk-tilt="2">
+        <div class="card"><h3>“Best fudge I have had.”</h3><p>— Ingrid</p></div>
+        <div class="card"><h3>“The sour belts are elite.”</h3><p>— Ola</p></div>
+        <div class="card"><h3>“Came for liquorice, left with four bags.”</h3><p>— Maja</p></div>
+        <div class="card"><h3>“My kids want to live here.”</h3><p>— Erik</p></div>
+      </div>
+    </div>
+    <div>
+      <span class="tag">C2 card-rise · U11 fly-to-cart · U10 elastic-pop</span>
+      <div class="grid" data-mk="card-rise">
+        <article class="card"><div class="card-media" data-mk-media><img data-ph="900x700|#f59db4|#7a1f3a|gummy" alt="Gummy bears"></div><h3>Gummy bears</h3><button class="btn" data-mk="fly-to-cart" data-mk-done-label="In the bag ✓">Into the bag</button></article>
+        <article class="card"><div class="card-media" data-mk-media><img data-ph="900x700|#9ed9c3|#1f5a46|mint" alt="Mint drops"></div><h3>Mint drops</h3><button class="btn" data-mk="fly-to-cart" data-mk-done-label="In the bag ✓">Into the bag</button></article>
+        <article class="card"><div class="card-media" data-mk-media><img data-ph="900x700|#ffcba8|#8a3a12|peach" alt="Peach rings"></div><h3>Peach rings</h3><button class="btn" data-mk="fly-to-cart" data-mk-done-label="In the bag ✓">Into the bag</button></article>
+      </div>
+      <p class="row" style="margin-top:18px"><button class="btn" data-mk="elastic-pop" data-mk-target="#qty" id="plus">+ 100 g</button><output id="qty" class="d3">100 g</output></p>
+    </div>
+    <div>
+      <span class="tag">C3 hover-preview (mouse)</span>
+      <ul class="menu" data-mk="hover-preview">
+        <li data-ph-preview="560x560|#e0572b|#5a1a08|chicken" data-mk-preview-color="#9d3819"><span>Firecracker chicken</span><em>£14</em></li>
+        <li data-ph-preview="560x560|#c49a6c|#3a220f|brisket" data-mk-preview-color="#7f5e3d"><span>Smoked brisket bun</span><em>£12</em></li>
+        <li data-ph-preview="560x560|#f2c94c|#6a4a08|corn" data-mk-preview-color="#ae8a2a"><span>Charred street corn</span><em>£7</em></li>
+        <li data-ph-preview="560x560|#d8b38a|#4a2a10|cheesecake" data-mk-preview-color="#91714d"><span>Burnt Basque cheesecake</span><em>£8</em></li>
+      </ul>
+    </div>
+    <div>
+      <span class="tag">C4 flex-accordion</span>
+      <div class="fa" data-mk="flex-accordion">
+        <article class="fa-col" data-mk-col><div class="fa-media" data-mk-media><img data-ph="900x1200|#86b08b|#1d3321|villa" alt=""></div><h3>Garden villa</h3></article>
+        <article class="fa-col" data-mk-col><div class="fa-media" data-mk-media><img data-ph="900x1200|#7f9fb5|#1d2a36|penthouse" alt=""></div><h3>Sky penthouse</h3></article>
+        <article class="fa-col" data-mk-col><div class="fa-media" data-mk-media><img data-ph="900x1200|#d9b07a|#4a2d14|patio" alt=""></div><h3>Patio house</h3></article>
+        <article class="fa-col" data-mk-col><div class="fa-media" data-mk-media><img data-ph="900x1200|#b393c0|#2a1832|loft" alt=""></div><h3>Cliff loft</h3></article>
+      </div>
+    </div>
+    <div class="orbit" data-mk="orbit">
+      <span class="tag">C5 orbit (click, ←/→)</span>
+      <div data-mk-stage>
+        <figure data-mk-item data-mk-name="Cloud Cleanser"><img data-ph="600x750|#cfd8ff|#5a68d6|1" alt="Cloud Cleanser"></figure>
+        <figure data-mk-item data-mk-name="Barrier Serum"><img data-ph="600x750|#ffd6f0|#c04a9a|2" alt="Barrier Serum"></figure>
+        <figure data-mk-item data-mk-name="Niacin Drops"><img data-ph="600x750|#d9f2e6|#3a9a72|3" alt="Niacin Drops"></figure>
+        <figure data-mk-item data-mk-name="Glaze Gel Cream"><img data-ph="600x750|#fff0d6|#c9892a|4" alt="Glaze Gel Cream"></figure>
+        <figure data-mk-item data-mk-name="Squalane Veil"><img data-ph="600x750|#e6e6e6|#6a6a6a|5" alt="Squalane Veil"></figure>
+        <figure data-mk-item data-mk-name="SPF 50 Milk"><img data-ph="600x750|#fff7c2|#b59a1a|6" alt="SPF 50 Milk"></figure>
+        <figure data-mk-item data-mk-name="Overnight Balm"><img data-ph="600x750|#e8d6ff|#7a4ac0|7" alt="Overnight Balm"></figure>
+      </div>
+      <p class="orbit-name" data-mk-orbit-name aria-live="polite">Cloud Cleanser</p>
+      <span class="ctrl"><button data-mk-prev aria-label="Previous">←</button><button data-mk-next aria-label="Next">→</button></span>
+    </div>
+    <div>
+      <span class="tag">C6 drag-carousel</span>
+      <div data-mk="drag-carousel">
+        <div class="dc-track" data-mk-track>
+          <article class="dc-slide"><img data-ph="900x720|#f59db4|#7a1f3a|1" alt=""><h3>Gummy bears</h3></article>
+          <article class="dc-slide"><img data-ph="900x720|#9ed9c3|#1f5a46|2" alt=""><h3>Mint drops</h3></article>
+          <article class="dc-slide"><img data-ph="900x720|#ffcba8|#8a3a12|3" alt=""><h3>Peach rings</h3></article>
+          <article class="dc-slide"><img data-ph="900x720|#d6f28a|#4a6a12|4" alt=""><h3>Sour apple</h3></article>
+          <article class="dc-slide"><img data-ph="900x720|#8b2fa0|#2a0d33|5" alt=""><h3>Blackcurrant</h3></article>
+          <article class="dc-slide"><img data-ph="900x720|#e23d55|#5a0d1a|6" alt=""><h3>Cherry cola</h3></article>
+        </div>
+        <span class="ctrl"><button data-mk-prev aria-label="Previous">←</button><button data-mk-next aria-label="Next">→</button></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="mq" data-mk="marquee" data-mk-velocity data-mk-speed="80">
+  <div data-mk-track><span>VOGUE</span><span>✱</span><span>MONOCLE</span><span>✱</span><span>KINFOLK</span><span>✱</span><span>CEREAL</span><span>✱</span></div>
+  <button class="mq-toggle" data-mk-marquee-toggle>Pause</button>
+</div>
+
+<section class="demo">
+  <div class="wrap"><span class="tag">C8 pendulum · drag the line · C9 rating</span></div>
+  <div class="pend" data-mk="pendulum" data-mk-drag>
+    <div class="pend-track" data-mk-track>
+      <div class="pend-card" data-mk-swing>“Best fudge on the coast.”</div>
+      <div class="pend-card" data-mk-swing>“The sour belts are elite.”</div>
+      <div class="pend-card" data-mk-swing>“Four bags. No regrets.”</div>
+      <div class="pend-card" data-mk-swing>“Smells like summer.”</div>
+      <div class="pend-card" data-mk-swing>“My kids want to live here.”</div>
+      <div class="pend-card" data-mk-swing>“Salty liquorice heaven.”</div>
+    </div>
+  </div>
+  <div class="wrap row">
+    <div data-mk="rating" data-mk-value="4.9" aria-label="Rated 4.9 out of 5"><span class="stars" aria-hidden="true">★★★★★<span class="stars-fill" data-mk-stars-fill>★★★★★</span></span> <b class="d3" data-mk-rating-number>4.9</b></div>
+  </div>
+</section>
+
+<section class="demo">
+  <div class="wrap stack">
+    <div>
+      <span class="tag">U5 magnetic · U6 fill-bloom · U9 confetti · U4 cursor labels</span>
+      <p class="row">
+        <span data-mk="magnetic" style="display:inline-block"><a class="btn" href="#footer">Get in touch →</a></span>
+        <button class="btn btn--light" data-mk="fill-bloom" style="--mk-bloom:#e0572b;border:1px solid #161513">Fill bloom</button>
+        <button class="btn" data-mk="confetti">Fizz!</button>
+        <span class="btn btn--light" data-mk-cursor="View" style="border:1px solid">Hover me (cursor label)</span>
+      </p>
+    </div>
+    <div>
+      <span class="tag">U8 tilt + sheen + depth child</span>
+      <div class="tiltcard" data-mk="tilt"><b data-mk-tilt-depth="18">Gummy Glen</b><span data-mk-sheen></span></div>
+    </div>
+  </div>
+</section>
+
+<div data-mk="cloud-curtain" aria-hidden="true"></div>
+<section class="demo"><div class="wrap"><span class="tag">S14 cloud-curtain (the clouds you just scrolled through)</span><h2 class="d2">Welcome to the kingdom.</h2></div></section>
+
+<section class="quote" data-mk="handoff" data-mk-next="#footer">
+  <div><span class="tag">S13 handoff</span><h2 class="d1" data-mk="line-rise">Come for the light,<br>stay for lunch.</h2></div>
+</section>
+
+<footer class="footer dark" id="footer" data-mk="follow-sticker" data-mk-theme="dark">
+  <svg class="tiles" data-mk-bloom aria-hidden="true"><defs><pattern id="tile" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M30 0 60 30 30 60 0 30Z" fill="none" stroke="#fff"/></pattern></defs><rect width="100%" height="100%" fill="url(#tile)"/></svg>
+  <div class="footer-inner" data-mk-handoff-content>
+    <span class="tag">U12 follow-sticker · T13 wordmark-rise</span>
+    <p class="lead">Move the mouse over the footer.</p>
+    <div class="wordmark" data-mk="wordmark-rise" data-mk-fit>motion kit</div>
+  </div>
+  <img class="sticker" data-mk-sticker data-ph="300x300|#f59db4|#8b2fa0|★" alt="">
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js"></script>
+<script src="../motion-core.js"></script>
+<script src="../effects/text.js"></script>
+<script src="../effects/media.js"></script>
+<script src="../effects/scroll.js"></script>
+<script src="../effects/ui.js"></script>
+<script src="../effects/collections.js"></script>
+<script src="../effects/intro.js"></script>
+<script>
+  (function () {
+    /* placeholder images (showroom only) */
+    function ph(spec) {
+      var p = spec.split('|'), wh = p[0].split('x'), w = +wh[0], h = +wh[1], a = p[1], b = p[2], label = p[3] || '';
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient></defs>' +
+        '<rect width="100%" height="100%" fill="url(#g)"/><circle cx="' + w * 0.7 + '" cy="' + h * 0.32 + '" r="' + Math.min(w, h) * 0.2 + '" fill="rgba(255,255,255,.22)"/>' +
+        '<text x="50%" y="56%" font-family="system-ui,sans-serif" font-weight="700" font-size="' + Math.round(Math.min(w, h) * 0.09) + '" fill="rgba(255,255,255,.85)" text-anchor="middle">' + label + '</text></svg>';
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+    document.querySelectorAll('img[data-ph]').forEach(function (im) { im.src = ph(im.getAttribute('data-ph')); });
+    document.querySelectorAll('[data-ph-preview]').forEach(function (li) { li.setAttribute('data-mk-preview', ph(li.getAttribute('data-ph-preview'))); });
+
+    /* intro choice (showroom only — on a real site the overlay carries data-mk in the HTML) */
+    var q = location.search, intro = (/[?&]intro=(\w+)/.exec(q) || [])[1] || 'window';
+    if (intro !== 'window') {
+      document.querySelector('.hero-frame').removeAttribute('data-mk');
+      var ov = document.querySelector('[data-intro="' + intro + '"]');
+      if (ov) { ov.hidden = false; ov.setAttribute('data-mk', 'intro-' + intro); }
+    }
+    document.querySelectorAll('[data-intro]').forEach(function (n) { if (n.hidden) n.remove(); });
+    if (/[?&]grain\b/.test(q)) { var g = document.createElement('div'); g.setAttribute('data-mk', 'grain'); document.body.appendChild(g); }
+    var swap = (/[?&]swap=(\w+)/.exec(q) || [])[1];
+    if (swap) document.querySelector('[data-mk~="hover-preview"]').setAttribute('data-mk-swap', swap);
+
+    /* app logic the effects talk to */
+    var count = 0, countEl = document.querySelector('[data-cart-count]');
+    document.addEventListener('mk:landed', function () { countEl.textContent = ++count; });
+    var grams = 100, qty = document.getElementById('qty');
+    document.getElementById('plus').addEventListener('click', function () { grams = Math.min(1000, grams + 100); qty.textContent = grams + ' g'; });
+
+    MK.init({ anchorOffset: '.nav' });
+    document.getElementById('pname').textContent = MK.t.name;
+    MK.start();
+  })();
+</script>
+</body>
+</html>
