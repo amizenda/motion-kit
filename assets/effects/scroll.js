@@ -2,6 +2,7 @@
  * motion-kit · effects/scroll.js
  * hero-exit · drift · depth-layers · pin-crossfade · pin-steps · sticky-steps · horizontal
  * stack-accordion · scroll-accordion · card-stack · sequence-build · sticky-stats · handoff · cloud-curtain
+ * camera-path · burst-collapse
  * Load after motion-core.js. In a bundler: import registerScroll from './effects/scroll'; registerScroll(MK).
  */
 (function (root, register) {
@@ -555,5 +556,266 @@
       tl.to(c, { opacity: 0, duration: 40 }, 255);
     });
     tl.set({}, {}, 310);
+  });
+
+  /* S15 · Camera path (illustrated maps, big artworks: "start on the whole picture, zoom to the first
+     character, glide past the others") — the section pins and scroll flies a camera over one large layer,
+     [data-mk-world], through stops {x, y, zoom}: x/y are 0..1 of the world, zoom 1 = the world just covers
+     the screen. The camera holds at each stop and snaps to it. Everything inside the world moves with it
+     (loop videos, SVG, labels placed in %). [data-mk-at="i"] lights up at stop i, [data-mk-route] SVG paths
+     draw with progress, [data-mk-cam-depth] layers parallax, [data-mk-keep-size] labels keep their size.
+     Without motion: the whole world shows at full width with every label visible. */
+  function parseStops(v) {
+    if (!v) return [];
+    if (Array.isArray(v)) return v;
+    var s = String(v).trim();
+    if (s.charAt(0) === '[') { try { return JSON.parse(s); } catch (e) { return []; } }
+    return s.split(/[;|]/).map(function (part) {
+      var n = part.trim().split(/[\s,]+/).map(parseFloat);
+      return { x: n[0], y: n[1], zoom: n[2] || 1 };
+    }).filter(function (p) { return !isNaN(p.x) && !isNaN(p.y); });
+  }
+  MK.effect('camera-path', function (el, o) {
+    var gs = o.gsap;
+    var world = el.querySelector('[data-mk-world]');
+    if (!world) return;
+    var stops = parseStops((!o.is.desktop && o.opt('stopsMobile', null)) || o.opt('stops', null));
+    var N = stops.length;
+    if (N < 2) return;
+    var aspect = 0, ro = o.opt('ratio', null);
+    if (ro) { var rp = String(ro).split(/[\/:x]/); aspect = rp.length > 1 ? parseFloat(rp[0]) / parseFloat(rp[1]) : parseFloat(ro); }
+    if (!aspect || !isFinite(aspect)) { var r0 = world.getBoundingClientRect(); aspect = r0.width && r0.height ? r0.width / r0.height : 16 / 9; }
+    var view = el.querySelector('[data-mk-viewport]') || el;
+    var marks = o.qa('[data-mk-at]'), paths = o.qa('[data-mk-route]'), dots = o.qa('[data-mk-dot]');
+    var layers = MK.toArray(world.querySelectorAll('[data-mk-cam-depth]'));
+    var keeps = MK.toArray(world.querySelectorAll('[data-mk-keep-size]'));
+    o.own([world].concat(layers, keeps, paths));
+    flag(el, 'mk-cam-on', o);
+    var ease = gs.parseEase(o.ease('inOut')) || function (x) { return x; }, hold = MK.clamp(o.opt('hold', 0.3), 0, 0.9), edges = o.opt('clamp', true);
+    var g = { W: 0, H: 0, bw: 0, bh: 0 }, lens = [], last = -1, state = { p: 0 };
+    var depth = layers.map(function (l) { return parseFloat(l.getAttribute('data-mk-cam-depth')) || 0; });
+    function measure() {
+      g.W = view.clientWidth; g.H = view.clientHeight;
+      if (!g.W || !g.H) return;
+      if (g.W / g.H > aspect) { g.bw = g.W; g.bh = g.W / aspect; } else { g.bh = g.H; g.bw = g.H * aspect; }
+      world.style.width = g.bw + 'px';
+      world.style.height = g.bh + 'px';
+      lens = paths.map(function (p) {
+        var L = p.getTotalLength ? p.getTotalLength() : 0;
+        p.style.strokeDasharray = L + ' ' + L;
+        return L;
+      });
+    }
+    function cam(p) {                                    // hold at each stop, ease between; zoom moves in log space
+      var f = p * (N - 1), i = Math.min(N - 2, Math.floor(f)), t = f - i, h = hold / 2;
+      var u = t <= h ? 0 : t >= 1 - h ? 1 : ease((t - h) / (1 - hold));
+      var a = stops[i], b = stops[i + 1];
+      var za = Math.max(0.05, a.zoom || 1), zb = Math.max(0.05, b.zoom || 1);
+      return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: Math.exp(Math.log(za) + (Math.log(zb) - Math.log(za)) * u) };
+    }
+    function mark(i) {
+      last = i;
+      marks.forEach(function (m) {
+        var at = String(m.getAttribute('data-mk-at')).split(/[\s,]+/);
+        m.classList.toggle('is-active', at.indexOf(String(i)) > -1);
+      });
+      dots.forEach(function (d, k) {
+        d.classList.toggle('is-on', k <= i);
+        d.classList.toggle('is-now', k === i);
+        if (k === i) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current');
+      });
+      el.dispatchEvent(new CustomEvent('mk:stop', { bubbles: true, detail: { index: i, stop: stops[i] } }));
+    }
+    function render(p) {
+      if (!g.W) return;
+      var c = cam(p), s = c.z, ww = g.bw * s, wh = g.bh * s;
+      var tx = g.W / 2 - c.x * ww, ty = g.H / 2 - c.y * wh;
+      if (edges) {                                       // never show past the edge of the artwork
+        tx = ww >= g.W ? MK.clamp(tx, g.W - ww, 0) : (g.W - ww) / 2;
+        ty = wh >= g.H ? MK.clamp(ty, g.H - wh, 0) : (g.H - wh) / 2;
+      }
+      gs.set(world, { x: tx, y: ty, scale: s, transformOrigin: '0 0', force3D: true });
+      for (var k = 0; k < layers.length; k++) gs.set(layers[k], { x: (c.x - 0.5) * g.bw * depth[k], y: (c.y - 0.5) * g.bh * depth[k] });
+      for (var q = 0; q < keeps.length; q++) gs.set(keeps[q], { scale: 1 / s });
+      for (var j = 0; j < paths.length; j++) paths[j].style.strokeDashoffset = String(lens[j] * (1 - p));
+      var idx = Math.round(p * (N - 1));
+      if (idx !== last) mark(idx);
+    }
+    measure();
+    var onInit = function () { measure(); render(state.p); };
+    o.ST.addEventListener('refreshInit', onInit);
+    o.cleanup(function () { o.ST.removeEventListener('refreshInit', onInit); });
+    var snapTo = stops.map(function (s, i) { return i / (N - 1); });
+    var tw = gs.to(state, {
+      p: 1, ease: 'none', onUpdate: function () { render(state.p); },
+      scrollTrigger: {
+        trigger: el, start: 'top top', end: '+=' + (N - 1) * o.opt('per', 120) + '%',
+        pin: true, scrub: o.opt('scrub', 0.8), anticipatePin: 1, invalidateOnRefresh: true,
+        snap: o.opt('snap', true) ? { snapTo: snapTo, duration: { min: 0.3, max: 0.9 }, delay: 0.05, ease: 'power2.inOut' } : false
+      }
+    });
+    render(0);
+    dots.forEach(function (d, i) {
+      o.on(d, 'click', function (e) {
+        e.preventDefault();
+        var st = tw.scrollTrigger;
+        MK.scrollTo(st.start + (st.end - st.start) * snapTo[i], { duration: 1.1 });
+      });
+    });
+    o.cleanup(function () {
+      marks.forEach(function (m) { m.classList.remove('is-active'); });
+      dots.forEach(function (d) { d.classList.remove('is-on', 'is-now'); d.removeAttribute('aria-current'); });
+    });
+  });
+
+  /* S16 · Burst & collapse (product pages: "the product appears, pulls its ingredients and facts out around
+     it, gathers them back in, and hands over to the next product") — the section pins; each [data-mk-set]
+     holds a [data-mk-product], [data-mk-item]s (placed by data-mk-angle/dist, or data-mk-x/y in % from the
+     centre), [data-mk-tag] labels with a drawn leader line and an optional [data-mk-info] block. Scroll
+     brings the product up, bursts the items out, draws the tags, shows the info, holds, then collapses it
+     all back before the next set. Items bob gently while the section is pinned (on their img/[data-mk-float]).
+     Reduced motion: every set is laid out statically. Without JS: a plain list under each product. */
+  function burstSpots(items) {
+    var K = items.length;
+    items.forEach(function (it, k) {
+      var xs = it.getAttribute('data-mk-x'), ys = it.getAttribute('data-mk-y'), left, top;
+      if (xs !== null && ys !== null) { left = 50 + parseFloat(xs); top = 50 + parseFloat(ys); }
+      else {
+        var ang = it.getAttribute('data-mk-angle'), dist = it.getAttribute('data-mk-dist');
+        var a = (ang !== null ? parseFloat(ang) : -90 + 360 * k / K) * Math.PI / 180;
+        var d = dist !== null ? parseFloat(dist) : 0.72;
+        left = 50 + Math.cos(a) * d * 50;
+        top = 50 + Math.sin(a) * d * 50;
+      }
+      it.style.left = left + '%';
+      it.style.top = top + '%';
+      it.__mkSpot = { l: left / 100, t: top / 100 };
+    });
+  }
+  function burstParts(el) {
+    return MK.toArray(el.querySelectorAll('[data-mk-set]')).map(function (s) {
+      var items = MK.toArray(s.querySelectorAll('[data-mk-item]'));
+      var info = s.querySelector('[data-mk-info]');
+      return {
+        set: s, stage: s.querySelector('[data-mk-stage]') || s,
+        product: s.querySelector('[data-mk-product]'), glow: s.querySelector('[data-mk-glow]'),
+        items: items, tags: MK.toArray(s.querySelectorAll('[data-mk-tag]')),
+        floats: items.map(function (it) { return it.querySelector('[data-mk-float]') || it.querySelector('img'); }).filter(Boolean),
+        info: info ? MK.toArray(info.children) : []
+      };
+    });
+  }
+  function burstOwn(o, parts) {
+    var all = [];
+    parts.forEach(function (P) {
+      all.push(P.set);
+      if (P.product) all.push(P.product);
+      if (P.glow) all.push(P.glow);
+      all.push.apply(all, P.items.concat(P.tags, P.floats, P.info));
+    });
+    o.own(all);
+  }
+  MK.effect('burst-collapse', function (el, o) {
+    var gs = o.gsap;
+    var parts = burstParts(el);
+    if (!parts.length) return;
+    burstOwn(o, parts);
+    flag(el, 'mk-burst-on', o);
+    var dots = o.qa('[data-mk-dot]');
+    var seed = 7, rnd = function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    var T = { enter: 0.8, burst: 1, show: 0.6, hold: o.opt('hold', 1), out: 1 };
+    var keepLast = o.opt('end', 'hold') !== 'collapse', lastI = parts.length - 1;
+    var tl = gs.timeline({ defaults: { ease: 'none' }, paused: true });
+    var bobs = [];
+    var t = 0;
+    parts.forEach(function (P, i) {
+      burstSpots(P.items);
+      P.set.style.zIndex = i + 1;
+      var offX = function (k, it) { return (0.5 - it.__mkSpot.l) * P.stage.clientWidth; };
+      var offY = function (k, it) { return (0.5 - it.__mkSpot.t) * P.stage.clientHeight; };
+      var rot0 = P.items.map(function () { return (rnd() - 0.5) * 50; });
+      var rot1 = P.items.map(function (it) { return parseFloat(it.getAttribute('data-mk-rot')) || 0; });
+      gs.set(P.items, { xPercent: -50, yPercent: -50 });
+      if (i) gs.set(P.set, { autoAlpha: 0 });
+      if (i) tl.set(P.set, { autoAlpha: 1 }, t);
+      // the first product is already standing when the section scrolls in (an empty stage reads as broken);
+      // `enterFirst` makes it rise from the empty stage like the others
+      if (i || o.opt('enterFirst', false)) {
+        if (P.glow) tl.fromTo(P.glow, { autoAlpha: 0, scale: 0.5 }, { autoAlpha: 1, scale: 1, duration: T.enter, ease: 'power2.out' }, t);
+        if (P.product) tl.fromTo(P.product, { autoAlpha: 0, y: 70, scale: 0.88 }, { autoAlpha: 1, y: 0, scale: 1, duration: T.enter, ease: 'power3.out' }, t);
+        t += T.enter * 0.7;
+      } else t += T.enter * 0.25;
+      tl.fromTo(P.items, { x: offX, y: offY, scale: 0.2, autoAlpha: 0, rotation: function (k) { return rot0[k]; } },
+        { x: 0, y: 0, scale: 1, autoAlpha: 1, rotation: function (k) { return rot1[k]; }, duration: T.burst, ease: 'back.out(1.4)', stagger: 0.06 }, t);
+      t += T.burst * 0.8;
+      if (P.tags.length) tl.fromTo(P.tags, { '--mk-line': 0, autoAlpha: 0 }, { '--mk-line': 1, autoAlpha: 1, duration: T.show, ease: 'power2.out', stagger: 0.05 }, t);
+      if (P.info.length) tl.fromTo(P.info, { autoAlpha: 0, y: 30 }, { autoAlpha: 1, y: 0, duration: T.show, ease: 'power3.out', stagger: 0.06 }, t);
+      t += T.show;
+      tl.addLabel('b' + i, t + T.hold / 2);
+      t += T.hold;
+      if (i < lastI || !keepLast) {
+        if (P.tags.length) tl.to(P.tags, { '--mk-line': 0, autoAlpha: 0, duration: T.show * 0.6, ease: 'power2.in' }, t);
+        if (P.info.length) tl.to(P.info, { autoAlpha: 0, y: -24, duration: T.show * 0.6, ease: 'power2.in' }, t);
+        tl.to(P.items, { x: offX, y: offY, scale: 0.2, autoAlpha: 0, rotation: function (k) { return rot0[k]; }, duration: T.out, ease: 'power2.in', stagger: { each: 0.04, from: 'end' } }, t + 0.2);
+        var exit = t + 0.2 + T.out * 0.7;
+        if (P.product) tl.to(P.product, { autoAlpha: 0, y: -50, scale: 0.92, duration: T.enter, ease: 'power2.in' }, exit);
+        if (P.glow) tl.to(P.glow, { autoAlpha: 0, scale: 0.6, duration: T.enter, ease: 'power2.in' }, exit);
+        t = exit + T.enter;
+        if (i < lastI) tl.set(P.set, { autoAlpha: 0 }, t);
+      }
+      P.floats.forEach(function (f) {
+        var b = gs.to(f, { y: -(5 + rnd() * 9), rotation: (rnd() - 0.5) * 6, duration: 1.8 + rnd() * 1.6, ease: 'sine.inOut', yoyo: true, repeat: -1, paused: true });
+        b.progress(rnd());                               // out of phase, so the items never bob in unison
+        bobs.push(b);
+      });
+    });
+    tl.set({}, {}, t);
+    var labelP = parts.map(function (P, i) { return tl.labels['b' + i] / tl.duration(); });
+    var cur = -1;
+    function mark(p) {
+      var best = 0, bd = 2;
+      labelP.forEach(function (lp, k) { var d = Math.abs(lp - p); if (d < bd) { bd = d; best = k; } });
+      if (best === cur) return;
+      cur = best;
+      parts.forEach(function (P, k) { P.set.classList.toggle('is-current', k === best); });
+      dots.forEach(function (d, k) {
+        d.classList.toggle('is-on', k <= best);
+        d.classList.toggle('is-now', k === best);
+        if (k === best) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current');
+      });
+    }
+    var st = o.trigger({
+      animation: tl, trigger: el, start: 'top top', end: '+=' + parts.length * o.opt('per', 200) + '%',
+      pin: true, scrub: o.opt('scrub', 0.8), anticipatePin: 1, invalidateOnRefresh: true,
+      snap: o.opt('snap', true) ? { snapTo: 'labels', duration: { min: 0.3, max: 0.9 }, delay: 0.05, ease: 'power2.inOut' } : false,
+      onUpdate: function (s) { mark(s.progress); },
+      onToggle: function (s) { bobs.forEach(function (b) { if (s.isActive) b.play(); else b.pause(); }); }
+    });
+    mark(0);
+    dots.forEach(function (d, i) {
+      o.on(d, 'click', function (e) {
+        e.preventDefault();
+        MK.scrollTo(st.labelToScroll ? st.labelToScroll('b' + i) : st.start + (st.end - st.start) * labelP[i], { duration: 1.1 });
+      });
+    });
+    // keyboard: focus inside a set that is not on screen scrolls to it
+    parts.forEach(function (P, i) { o.on(P.set, 'focusin', function () { if (cur !== i) MK.scrollTo(st.labelToScroll ? st.labelToScroll('b' + i) : st.start, { duration: 0.6 }); }); });
+    o.cleanup(function () {
+      bobs.forEach(function (b) { b.kill(); });
+      parts.forEach(function (P) { P.set.classList.remove('is-current'); });
+      dots.forEach(function (d) { d.classList.remove('is-on', 'is-now'); d.removeAttribute('aria-current'); });
+    });
+  }, {
+    reduced: function (el, o) {
+      var parts = burstParts(el);
+      if (!parts.length) return;
+      burstOwn(o, parts);
+      flag(el, 'mk-burst-static', o);
+      parts.forEach(function (P) {
+        burstSpots(P.items);
+        o.gsap.set(P.items, { xPercent: -50, yPercent: -50, rotation: function (k, it) { return parseFloat(it.getAttribute('data-mk-rot')) || 0; } });
+        if (P.tags.length) o.gsap.set(P.tags, { '--mk-line': 1 });
+      });
+    }
   });
 });

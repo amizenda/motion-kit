@@ -55,6 +55,12 @@
   .progress { position: fixed; top: 0; left: 0; z-index: 60; width: 100%; height: 3px; background: #e0572b; }
   .panel { position: fixed; right: 14px; bottom: 14px; z-index: 70; display: grid; gap: 6px; padding: 12px; border-radius: 14px; background: rgba(20, 19, 17, .9); color: #f4f1ea; font: 12px/1.3 ui-monospace, Consolas, monospace; max-width: 260px; }
   .panel a { color: #f4f1ea; }
+  .panel > span { display: block; }
+  .panel summary { cursor: pointer; list-style: none; }
+  .panel summary::-webkit-details-marker { display: none; }
+  .panel summary::after { content: " ▾"; }
+  .panel[open] summary::after { content: " ▴"; }
+  .panel[open] summary { margin-bottom: 4px; }
   .panel b { color: #e0a17b; }
 
   /* hero */
@@ -67,6 +73,7 @@
   /* text */
   .rule { height: 2px; border: 0; background: currentColor; margin: 0; }
   .stats b { display: block; font-size: clamp(44px, 6vw, 88px); letter-spacing: -.04em; }
+  #text { overflow-x: clip; }   /* the ribbon bleeds past the column; clip it at the section, not the page */
   .ribbon { width: 100%; height: auto; overflow: visible; font: 800 34px system-ui, sans-serif; color: #3a2340; letter-spacing: .04em; }
 
   /* media */
@@ -77,7 +84,7 @@
   .gi h2 { white-space: nowrap; }
   .mark { position: absolute; font: 600 13px/1.2 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #245C3E; }
   .mark--tl { top: 90px; left: 24px; } .mark--br { right: 24px; bottom: 28px; }
-  .zt-card { position: absolute; right: 24px; bottom: 7vh; width: min(440px, 100% - 48px); padding: 28px; border-radius: 18px; background: rgba(244, 241, 234, .94); }
+  .zt-card { position: absolute; left: 24px; bottom: 7vh; width: min(440px, 100% - 48px); padding: 28px; border-radius: 18px; background: rgba(244, 241, 234, .94); }
 
   /* scroll */
   .blob { width: 30vw; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffcfa8, #e0572b 70%); position: absolute; right: -6vw; top: 10%; opacity: .5; pointer-events: none; }
@@ -178,8 +185,46 @@
   .tiltcard { position: relative; overflow: hidden; aspect-ratio: 16 / 10; border-radius: 22px; background: linear-gradient(135deg, #f59db4, #8b2fa0); display: grid; place-items: center; color: #fff; }
   .tiltcard b { font-size: clamp(30px, 4vw, 56px); letter-spacing: -.03em; }
   .row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+  .loopframe { aspect-ratio: 16 / 9; max-width: 560px; }
+  .loopframe video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* S15 camera-path + M10 loop-video */
+  .cam { background: #0f1a14; color: #f4f1ea; }
+  .cam-route { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .cam-route path { fill: none; stroke: #f3d27a; stroke-width: 4; stroke-linecap: round; }
+  /* a little framed film pinned above its village (in a real build: a loop cut from the same artwork) */
+  .cam-loop { position: absolute; width: 10%; aspect-ratio: 16 / 9; object-fit: cover; border: 4px solid #f4ecd8; border-radius: 10px; box-shadow: 0 10px 26px -10px rgba(0, 0, 0, .55); translate: -50% -100%; rotate: -2deg; background: #f1e8d2; }
+  .cam-loop + .cam-loop { rotate: 2deg; }
+  .cam-anchor { position: absolute; width: 0; height: 0; transform-origin: 0 0; }
+  .cam-pin { position: absolute; left: 0; top: 0; transform: translateX(-50%); padding: 7px 12px; border-radius: 99px; background: rgba(15, 26, 20, .82); color: #f4f1ea; font: 600 13px/1 system-ui, sans-serif; white-space: nowrap; }
+  .cam-caps { position: absolute; left: 6vw; bottom: 9vh; z-index: 2; display: grid; max-width: min(34rem, 86vw); }
+  .cam-caps > * { grid-area: 1 / 1; text-shadow: 0 2px 18px rgba(0, 0, 0, .55); }
+  .cam-dots { position: absolute; right: 24px; top: 50%; translate: 0 -50%; display: grid; gap: 10px; z-index: 2; }
+  .cam-dots button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; font: 600 12px/1 system-ui; }
+  .cam-dots .is-now { background: #f3d27a; border-color: #f3d27a; color: #0f1a14; }
+  html:not(.mk-motion) .cam { padding: 10vh 0; }
+  html:not(.mk-motion) .cam-caps, html:not(.mk-motion) .cam-dots { position: static; translate: none; margin: 24px auto 0; width: min(1180px, 100% - 48px); }
+
+  /* M9 frame-scrub */
+  .fs { background: #0b0d0c; color: #f4f1ea; }
+  .fs-band { text-shadow: 0 2px 22px rgba(0, 0, 0, .7); }
+  html:not(.mk-motion) .fs-band { width: min(1180px, 100% - 48px); margin: 6vh auto; }
+
+  /* S16 burst-collapse */
+  .burst { background: radial-gradient(120% 90% at 50% 70%, #f7f1e3, #e3dccb); }
+  .burst-product { height: min(56vh, 520px); width: auto; border-radius: 28px; box-shadow: 0 40px 80px -40px rgba(40, 50, 30, .55); }
+  .burst-glow { width: min(62vh, 560px, 92vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(255, 244, 205, .95), rgba(255, 244, 205, 0) 70%); }
+  .burst [data-mk-item] img { width: clamp(64px, 8vw, 116px); aspect-ratio: 1; border-radius: 50%; object-fit: cover; box-shadow: 0 16px 30px -16px rgba(0, 0, 0, .45); }
+  .burst [data-mk-tag] { padding: 5px 10px; border-radius: 99px; background: #fff; color: #3f4b32; font: 600 12px/1 system-ui, sans-serif; }
+  .burst [data-mk-info] > * + * { margin-top: 10px; }
+  .burst-dots { position: absolute; right: 24px; top: 24px; z-index: 5; display: flex; gap: 8px; }
+  .burst-dots button { padding: 8px 14px; border-radius: 99px; border: 1px solid #3f4b32; background: transparent; color: #3f4b32; cursor: pointer; font: 600 12px/1 system-ui; }
+  .burst-dots .is-now { background: #3f4b32; color: #fff; }
+  html:not(.mk-motion) .burst { padding: 8vh 24px; }
 
   @media (max-width: 767px) {
+    .burst-product { height: 40vh; }
+    .burst [data-mk-info] { left: 24px; right: 24px; bottom: 6vh; }
     .ps-step, .ss, .sac-grid, .cs-grid, .sb-grid, .st { grid-template-columns: 1fr; }
     .ss-sticky { height: 60vh; }
     .fa { grid-template-columns: 1fr; height: auto; }
@@ -207,13 +252,13 @@
   <a class="cart" href="#collections" data-mk-cart>Bag <span data-cart-count>0</span></a>
 </nav>
 
-<aside class="panel" aria-label="Showroom options">
-  <span>preset: <b id="pname">editorial</b></span>
+<details class="panel" open aria-label="Showroom options">
+  <summary>options · preset <b id="pname">editorial</b></summary>
   <span><a href="?preset=calm">calm</a> · <a href="?preset=editorial">editorial</a> · <a href="?preset=liquid">liquid</a> · <a href="?preset=warm">warm</a> · <a href="?preset=playful">playful</a></span>
   <span>intro: <a href="?intro=window">window</a> · <a href="?intro=arch">arch</a> · <a href="?intro=drop">drop</a> · <a href="?intro=curtain">curtain</a></span>
   <span>preview swap: <a href="?swap=pop">pop</a> · <a href="?swap=wipe">wipe</a> · <a href="?swap=fade">fade</a></span>
   <span><a href="?mk-reduce">reduced motion</a> · <a href="?grain">grain</a> · <a href="?mk-debug">markers</a></span>
-</aside>
+</details>
 
 <!-- ═════════ HERO · I1 intro-window · S1 hero-exit · T1 line-rise (on intro) ═════════ -->
 <header class="hero" id="top" data-mk="hero-exit" data-mk-theme="dark">
@@ -288,6 +333,14 @@
         <div class="frame" data-mk="lightbox" data-mk-caption="Garden Villa"><img data-ph="1600x1000|#86b08b|#1d3321|Garden" alt="Garden Villa"></div>
       </div>
     </div>
+    <div>
+      <span class="tag">M10 loop-video (plays only on screen)</span>
+      <div class="frame loopframe">
+        <video data-mk="loop-video" poster="media/loop-poster.jpg" preload="none" width="640" height="360" aria-hidden="true">
+          <source data-src="media/loop.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -307,7 +360,7 @@
 </section>
 
 <!-- ═════════ SCROLL SET PIECES ═════════ -->
-<section class="demo" style="overflow:hidden">
+<section class="demo" style="position:relative;overflow:hidden">
   <div class="blob" data-mk="drift" data-mk-from="-40" data-mk-to="40"></div>
   <div class="wrap"><span class="tag">S2 drift</span><h2 class="d2" style="max-width:14ch">The blob drifts against the scroll.</h2></div>
 </section>
@@ -437,6 +490,83 @@
       <article class="st-row" data-mk-stat-row data-mk-value="30" data-mk-unit="kcal" data-mk-label="per serve"><h3 class="d3">Light</h3><p class="lead">30 kcal a serve.</p></article>
       <article class="st-row" data-mk-stat-row data-mk-value="1" data-mk-label="farm"><h3 class="d3">One farm</h3><p class="lead">Grown in a single garden.</p></article>
     </div>
+  </div>
+</section>
+
+<!-- ═════════ SCROLL CINEMA · S15 camera-path · M10 loop-video · M9 frame-scrub · S16 burst-collapse ═════════ -->
+<section class="cam" data-mk="camera-path" data-mk-ratio="16/9" data-mk-theme="dark"
+         data-mk-stops="0.5 0.5 1; 0.24 0.62 2.6; 0.53 0.36 2.6; 0.79 0.64 2.8; 0.5 0.5 1.1"
+         data-mk-stops-mobile="0.25 0.5 1; 0.25 0.6 1.7; 0.53 0.38 1.7; 0.8 0.62 1.8; 0.8 0.5 1">
+  <div data-mk-world>
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="camSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe3c4"/><stop offset="1" stop-color="#7fae7a"/></linearGradient>
+        <radialGradient id="camLake" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#9fd2d0"/><stop offset="1" stop-color="#5f9fa0"/></radialGradient>
+      </defs>
+      <rect width="1600" height="900" fill="url(#camSky)"/>
+      <path d="M0 300 L180 170 L330 290 L520 120 L700 280 L880 150 L1060 300 L1260 140 L1420 260 L1600 180 V900 H0Z" fill="#5f8a5a" opacity=".55"/>
+      <path d="M0 420 L200 300 L380 420 L600 280 L820 430 L1040 300 L1260 430 L1460 320 L1600 400 V900 H0Z" fill="#4c7a49" opacity=".7"/>
+      <path d="M-20 700 C 260 620, 420 760, 700 690 S 1180 560, 1620 640" fill="none" stroke="#7cc0c0" stroke-width="46" stroke-linecap="round"/>
+      <ellipse cx="850" cy="330" rx="120" ry="60" fill="url(#camLake)"/>
+      <g fill="#f4ecd8" stroke="#6b4a2b" stroke-width="3">
+        <rect x="350" y="530" width="44" height="32"/><rect x="410" y="545" width="38" height="28"/><rect x="820" y="300" width="40" height="30"/>
+        <rect x="1230" y="560" width="46" height="34"/><rect x="1290" y="575" width="36" height="26"/>
+      </g>
+      <g fill="#2f5d34"><circle cx="300" cy="610" r="22"/><circle cx="470" cy="600" r="18"/><circle cx="760" cy="360" r="20"/><circle cx="1180" cy="620" r="24"/><circle cx="1350" cy="610" r="19"/><circle cx="960" cy="380" r="17"/></g>
+    </svg>
+    <svg class="cam-route" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <path data-mk-route d="M384 558 C 520 470, 700 420, 848 324 S 1120 470, 1264 576"/>
+    </svg>
+    <video class="cam-loop" data-mk="loop-video" style="left:25%;top:56%" poster="media/loop-poster.jpg" preload="none" aria-hidden="true"><source data-src="media/loop.mp4" type="video/mp4"></video>
+    <video class="cam-loop" data-mk="loop-video" data-mk-rate="0.7" style="left:80%;top:59%" poster="media/loop-poster.jpg" preload="none" aria-hidden="true"><source data-src="media/loop.mp4" type="video/mp4"></video>
+    <div class="cam-anchor" data-mk-keep-size style="left:25%;top:65%"><span class="cam-pin" data-mk-at="1">Highlands · ginger &amp; turmeric</span></div>
+    <div class="cam-anchor" data-mk-keep-size style="left:53%;top:42%"><span class="cam-pin" data-mk-at="2">Lake village · lotus</span></div>
+    <div class="cam-anchor" data-mk-keep-size style="left:80%;top:67%"><span class="cam-pin" data-mk-at="3">River market · lemongrass</span></div>
+  </div>
+  <div class="cam-caps">
+    <div data-mk-at="0"><span class="tag">S15 camera-path · M10 loop-video inside the world</span><h2 class="d2">Start wide on the map.</h2></div>
+    <div data-mk-at="1"><h2 class="d3">Zoom to the first village. Its little film keeps playing.</h2></div>
+    <div data-mk-at="2"><h2 class="d3">Glide on to the next. The route draws itself.</h2></div>
+    <div data-mk-at="3"><h2 class="d3">Labels keep their size while the camera zooms.</h2></div>
+    <div data-mk-at="4"><h2 class="d3">Pull back. Scroll snaps to every stop; the dots jump.</h2></div>
+  </div>
+  <nav class="cam-dots" aria-label="Map stops"><button data-mk-dot>1</button><button data-mk-dot>2</button><button data-mk-dot>3</button><button data-mk-dot>4</button><button data-mk-dot>5</button></nav>
+</section>
+
+<section class="fs" data-mk="frame-scrub" data-mk-frames="media/seq/f_####.webp" data-mk-count="60" data-mk-theme="dark">
+  <img data-mk-poster src="media/seq/f_0001.webp" width="800" height="450" alt="">
+  <div class="fs-band" data-mk-band="0 0.3"><span class="tag">M9 frame-scrub</span><h2 class="d2">Scroll draws the film, frame by frame.</h2></div>
+  <div class="fs-band" data-mk-band="0.36 0.64"><h2 class="d3">Frames load coarse to fine, so it scrubs before the set has arrived.</h2></div>
+  <div class="fs-band" data-mk-band="0.7 1"><h2 class="d3">Scroll back up and the dive plays in reverse.</h2></div>
+</section>
+
+<section class="burst" data-mk="burst-collapse">
+  <nav class="burst-dots" aria-label="Products"><button data-mk-dot>Cleanser</button><button data-mk-dot>Serum</button></nav>
+  <div data-mk-set>
+    <div data-mk-stage>
+      <i class="burst-glow" data-mk-glow aria-hidden="true"></i>
+      <img class="burst-product" data-mk-product data-ph="420x760|#efe7d4|#8aa173|cleanser" alt="Herbal cleanser">
+      <ul data-mk-items>
+        <li data-mk-item data-mk-angle="-155" data-mk-dist="0.72"><img data-ph="220x220|#b9d48a|#3f6b2a|tea" alt=""><span data-mk-tag>Green tea</span></li>
+        <li data-mk-item data-mk-angle="-35" data-mk-dist="0.7" data-mk-rot="8"><img data-ph="220x220|#f2c14e|#9a5b12|turmeric" alt=""><span data-mk-tag>Turmeric</span></li>
+        <li data-mk-item data-mk-angle="20" data-mk-dist="0.74" data-mk-rot="-6"><img data-ph="220x220|#f5e6c4|#b08b4a|rice" alt=""><span data-mk-tag>Rice water</span></li>
+        <li data-mk-item data-mk-angle="180" data-mk-dist="0.74"><img data-ph="220x220|#d9c3e8|#6b4a8a|lotus" alt=""><span data-mk-tag>Lotus</span></li>
+      </ul>
+    </div>
+    <div data-mk-info><span class="tag">S16 burst-collapse</span><h3 class="d3">Herbal cleanser</h3><p>The product rises, its ingredients burst out and their labels draw in. Then it all gathers back.</p></div>
+  </div>
+  <div data-mk-set>
+    <div data-mk-stage>
+      <i class="burst-glow" data-mk-glow aria-hidden="true"></i>
+      <img class="burst-product" data-mk-product data-ph="420x760|#e8efe3|#5e7d63|serum" alt="Herbal serum">
+      <ul data-mk-items>
+        <li data-mk-item data-mk-x="-34" data-mk-y="-24"><img data-ph="220x220|#ffd1a8|#b4561b|ginseng" alt=""><span data-mk-tag>Ginseng</span></li>
+        <li data-mk-item data-mk-x="34" data-mk-y="-26" data-mk-rot="6"><img data-ph="220x220|#c7e3d0|#2f7a52|centella" alt=""><span data-mk-tag>Centella</span></li>
+        <li data-mk-item data-mk-x="-36" data-mk-y="18"><img data-ph="220x220|#f6d6df|#a8476a|rose" alt=""><span data-mk-tag>Rose</span></li>
+        <li data-mk-item data-mk-x="35" data-mk-y="20" data-mk-rot="-8"><img data-ph="220x220|#e9e2b9|#7d7a2a|squalane" alt=""><span data-mk-tag>Squalane</span></li>
+      </ul>
+    </div>
+    <div data-mk-info><h3 class="d3">Herbal serum</h3><p>Items can be placed by angle and distance, or by x/y in % from the centre.</p></div>
   </div>
 </section>
 
@@ -611,6 +741,7 @@
     var grams = 100, qty = document.getElementById('qty');
     document.getElementById('plus').addEventListener('click', function () { grams = Math.min(1000, grams + 100); qty.textContent = grams + ' g'; });
 
+    if (window.matchMedia('(max-width: 767px)').matches) document.querySelector('.panel').open = false;
     MK.init({ anchorOffset: '.nav' });
     document.getElementById('pname').textContent = MK.t.name;
     MK.start();

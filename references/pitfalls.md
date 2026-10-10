@@ -102,6 +102,24 @@ Run the checklist before reporting the work as done.
   ×36 bug].
 - [ ] Canvas: cap DPR at 1.5–2, debounce resize, stop the loop when idle, dispose WebGL resources on teardown.
 - [ ] Limit: one intro, one heavy canvas/WebGL effect, ≤ 4 pinned scenes per page.
+- [ ] Scroll-scrubbed films: frame sequences on a canvas (M9) are the predictable choice on iPhone; `<video>` scrubbing
+  needs a Blob source, one seek in flight, a short keyframe interval and iOS priming (M9 video mode does all four).
+  Keep 60–120 frames per scene, 2–6 MB, load coarse-to-fine starting a screen early, cap DPR at 1.5 on phones, and
+  render a **native 9:16** set for phones instead of cropping the 16:9 film. Never wait on `img.decode()` before
+  drawing: it can stall in a background tab and freeze the loader. ✅ frame-scrub.
+- [ ] Idle loop videos: muted + playsinline + loop, lazy `data-src`, play only while on screen and the tab is visible,
+  retry on the first touch when autoplay is refused, never `autoplay` in the markup (it ignores reduced motion).
+  Set `defaultPlaybackRate` as well as `playbackRate`: `load()` resets the rate. ✅ loop-video.
+- [ ] Anything scaled past its section (a pushed-in hero, a ribbon that bleeds, a zoomed layer) needs a clipping
+  parent, or the page gains a sideways scroll that phones let visitors pan into. Check `scrollWidth` against
+  `clientWidth` at the end of the page, after every scrubbed effect has run. ✅ hero-exit clips itself.
+- [ ] Captions that share one spot switch out first, then in; a simultaneous cross-fade overlaps two texts for
+  most of a second. ✅ pin-crossfade, camera-path.
+- [ ] `MK.scrollTo(…, { immediate: true })` must go through Lenis when Lenis is on, or Lenis drags the page back
+  to its old position on the next frame. ✅ core.
+- [ ] A pinned stage is one grid cell: give it `grid-template-columns: minmax(0, 1fr)`, or one wide child (a glow,
+  a nowrap label) stretches the stage past the screen and every %-placed item lands off-screen on phones.
+  ✅ burst-collapse.
 - [ ] Never animate in a frame whose image has not arrived: wait for `img.decode()` or show a colour/blurred placeholder,
   preload before the interaction (not on it), and give each swappable image its own layer so a swap never shows a
   blank frame [kit's own first hover-preview opened as an empty cream disc]. ✅ hover-preview.

@@ -1,6 +1,6 @@
 ---
 name: motion-kit
-description: "Signature web-animation kit distilled from six award-style sites (nova, Ember/Cloud Kitchen, Solenne, Fizzy Fjord, Oval, Dewpoint): 60 tested scroll, text, image, intro and interaction effects applied with data-mk attributes, five motion personalities, and a guided picker that inventories the page and asks the user which animation each section should get before implementing and verifying it. Use this skill whenever the user wants to add, choose, change, preview or audit animations on a website or landing page — scroll reveals, text reveals, parallax, pinned or horizontal scroll scenes, preloaders/intros, image wipes, marquees, carousels, cursor or hover effects, micro-interactions — in plain HTML/CSS/JS or React/Next.js, even if they only say 'make it feel alive', 'add some motion', 'animate this section', or mention one of those six sites."
+description: "Signature web-animation kit distilled from six award-style sites (nova, Ember/Cloud Kitchen, Solenne, Fizzy Fjord, Oval, Dewpoint): 64 tested scroll, text, image, intro and interaction effects applied with data-mk attributes (including scroll-scrubbed frame sequences, camera paths over big artworks, idle loop videos and product burst views for AI start/end-frame video sites), five motion personalities, and a guided picker that inventories the page and asks the user which animation each section should get before implementing and verifying it. Use this skill whenever the user wants to add, choose, change, preview or audit animations on a website or landing page — scroll reveals, text reveals, parallax, pinned or horizontal scroll scenes, preloaders/intros, image wipes, marquees, carousels, cursor or hover effects, micro-interactions — in plain HTML/CSS/JS or React/Next.js, even if they only say 'make it feel alive', 'add some motion', 'animate this section', or mention one of those six sites."
 ---
 
 # Motion Kit
@@ -9,8 +9,12 @@ A tested animation library plus a workflow for applying it **section by section,
 
 - `assets/motion-core.js` — the runtime (`window.MK` / `import MK`): GSAP + ScrollTrigger wiring, Lenis smooth
   scroll, live reduced-motion handling, accessible text splitting, presets, cleanup on breakpoint changes.
-- `assets/effects/*.js` — 60 effects, each applied with `data-mk="<name>"` and tuned with `data-mk-<option>`:
-  `text.js` (T1–T13) · `media.js` (M1–M8) · `scroll.js` (S1–S14) · `collections.js` (C1–C9) · `ui.js` (U1–U12) · `intro.js` (I1–I4).
+- `assets/effects/*.js` — 64 effects, each applied with `data-mk="<name>"` and tuned with `data-mk-<option>`:
+  `text.js` (T1–T13) · `media.js` (M1–M10) · `scroll.js` (S1–S16) · `collections.js` (C1–C9) · `ui.js` (U1–U12) · `intro.js` (I1–I4).
+- For **AI-generated video sites** (Higgsfield start/end-frame chains and similar): M9 `frame-scrub` scrubs an
+  image sequence or video on scroll, M10 `loop-video` runs idle loops, S15 `camera-path` flies a camera over one big
+  artwork, S16 `burst-collapse` bursts a real product's ingredients out and back. Producing a long seamless video
+  chain is a separate job: the `scroll-world` skill, when installed, owns that pipeline and its own scrub engine.
 - `assets/motion-kit.css` — structural CSS for every effect (no-flash rules, masks, overlays, reduced fallbacks).
 - `assets/showroom/index.html` — a live page demonstrating every effect; also the reference markup.
 - `references/` — load only what the current step needs (map at the end).

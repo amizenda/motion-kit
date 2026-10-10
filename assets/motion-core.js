@@ -266,8 +266,11 @@
       if (opts.focus && !isNum) focusEl(el);
       if (opts.onComplete) opts.onComplete();
     };
-    if (MK.lenis && !MK.reduced && !opts.immediate) {
-      MK.lenis.scrollTo(el, { offset: -offset, duration: opts.duration || 1.4, easing: opts.easing, onComplete: done, force: !!opts.force });
+    if (MK.lenis && !MK.reduced) {
+      // instant jumps go through Lenis too: a bare window.scrollTo leaves Lenis on its old position,
+      // and its next frame drags the page back there
+      if (opts.immediate) MK.lenis.scrollTo(el, { offset: -offset, immediate: true, force: true, onComplete: done });
+      else MK.lenis.scrollTo(el, { offset: -offset, duration: opts.duration || 1.4, easing: opts.easing, onComplete: done, force: !!opts.force });
       return;
     }
     var y = isNum ? el : el.getBoundingClientRect().top + window.pageYOffset - offset;

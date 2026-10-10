@@ -85,6 +85,7 @@ Eyebrows/ledes: C1 stagger-up on the wrapper.
 |---|---|
 | warm | **C3 hover-preview list** · C2 · C6 |
 | playful | **C6 drag-carousel + U8 tilt + U11 fly-to-cart + U10 elastic-pop** · C2 |
+| any (hero product, ingredient story) | **S16 burst-collapse** (product rises, ingredients burst out with labels, gather back, next product) |
 
 ### showcase (browse one range)
 liquid → **C5 orbit** · calm → C4 flex-accordion · editorial → C2 card-rise + M1 hover image swap (K4) ·
@@ -98,6 +99,10 @@ playful → S10 card-stack or S9 scroll-accordion · warm → C3 hover-preview.
 
 ### journey
 **S7 horizontal** (+ M1 inside panels, `data-mk-h-parallax` images) · S8 stack-accordion · S3 depth-layers (one scene).
+For an **illustrated map or one big artwork** with places/characters to visit: **S15 camera-path** (zoom to each
+stop, labels light up, a route draws) + M10 loop-video for each character that should "move a little".
+For **AI-generated video** of the journey (start/end-frame chains): **M9 frame-scrub** (frame sequence on canvas,
+native 9:16 set for phones); a long seamless multi-scene chain is the `scroll-world` skill's job.
 
 ### testimonials
 | A | **C7 marquee** (velocity-reactive, with pause button) + C9 rating |
@@ -107,7 +112,8 @@ playful → S10 card-stack or S9 scroll-accordion · warm → C3 hover-preview.
 
 ### media-moment
 **M4 window-grow** (closing photo) · **M6 zoom-through** (brand shape) · M5 grow-inline (word-image-word) ·
-M1 `from=center` scrubbed (wide image opening) · S3 depth-layers. Max one per page of M4/M5/M6 each.
+M1 `from=center` scrubbed (wide image opening) · S3 depth-layers · **M9 frame-scrub** (a scrubbed film: a dive, a
+transformation, a pour) · M10 loop-video (an ambient full-bleed loop). Max one per page of M4/M5/M6 each.
 
 ### pricing / faq
 C1 stagger-up only (calm: none). Never pin or scrub content people compare or read carefully.

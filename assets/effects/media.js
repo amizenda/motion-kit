@@ -1,6 +1,7 @@
 /*!
  * motion-kit · effects/media.js
  * clip-reveal · parallax · settle · window-grow · grow-inline · zoom-through · velocity-skew · lightbox
+ * frame-scrub · loop-video
  * Load after motion-core.js. In a bundler: import registerMedia from './effects/media'; registerMedia(MK).
  */
 (function (root, register) {
@@ -10,6 +11,7 @@
 })(typeof window !== 'undefined' ? window : this, function (MK) {
   'use strict';
   var SVG = 'http://www.w3.org/2000/svg';
+  function flag(el, cls, o) { el.classList.add(cls); o.cleanup(function () { el.classList.remove(cls); }); }
 
   function svgEl(tag, attrs) {
     var n = document.createElementNS(SVG, tag);
@@ -351,4 +353,238 @@
     o.cleanup(function () { if (isOpen) { busy = false; hide(); } });
   }
   MK.effect('lightbox', function (el, o) { setupLightbox(el, o, false); }, { reduced: function (el, o) { setupLightbox(el, o, true); } });
+
+  /* M9 · Frame scrub (Apple-style sequences; AI start/end-frame video chains) — the section pins and scroll
+     draws an image sequence on a canvas, frame-exact in both directions (or seeks a video with `video`).
+     Frames load coarse-to-fine, so scrubbing works before the set is complete; the nearest loaded frame
+     stands in meanwhile. Children [data-mk-band="0.1 0.35"] fade in and out over that progress range (0..1).
+     Without motion: the [data-mk-poster] image and the bands show as a normal static section. */
+  function seqUrls(spec, count, first) {
+    // "seq/f_####.webp" + count → seq/f_0001.webp …; a JSON array or a comma list is used as given
+    if (!spec) return [];
+    var s = String(spec).trim();
+    if (s.charAt(0) === '[') { try { return JSON.parse(s); } catch (e) { return []; } }
+    if (s.indexOf(',') > -1) return s.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    var m = /#+/.exec(s);
+    if (!m || !count) return [s];
+    var out = [];
+    for (var i = 0; i < count; i++) {
+      var n = String(i + first);
+      while (n.length < m[0].length) n = '0' + n;
+      out.push(s.slice(0, m.index) + n + s.slice(m.index + m[0].length));
+    }
+    return out;
+  }
+  function coarseToFine(n) {
+    var seen = new Uint8Array(n), order = [];
+    function add(i) { if (i >= 0 && i < n && !seen[i]) { seen[i] = 1; order.push(i); } }
+    add(0); add(n - 1);
+    for (var step = 32; step >= 1; step = step >> 1) for (var i = 0; i < n; i += step) add(i);
+    return order;
+  }
+  MK.effect('frame-scrub', function (el, o) {
+    var gs = o.gsap, phone = !o.is.desktop;
+    var pick = function (k, d) { var v = phone ? o.opt(k + 'Mobile', null) : null; return v == null ? o.opt(k, d) : v; };
+    var urls = seqUrls(pick('frames', null), pick('count', 0), o.opt('first', 1));
+    var vsrc = pick('video', null);
+    if (!urls.length && !vsrc) return;
+    flag(el, 'mk-fs-on', o);
+    var stage = el.querySelector('[data-mk-stage]') || el;
+    var poster = el.querySelector('[data-mk-poster]');
+    var bands = o.qa('[data-mk-band]');
+    o.own(bands);
+    var surface, made = false, ctx2 = null, video = null;
+    if (urls.length) {
+      surface = stage.querySelector('canvas[data-mk-canvas]');
+      if (!surface) { surface = document.createElement('canvas'); made = true; }
+      surface.classList.add('mk-fs-canvas');
+      ctx2 = surface.getContext('2d');
+    } else {
+      surface = video = document.createElement('video');
+      made = true;
+      video.className = 'mk-fs-video';
+      video.muted = true; video.playsInline = true; video.preload = 'auto';
+      video.setAttribute('muted', ''); video.setAttribute('playsinline', '');
+    }
+    surface.setAttribute('aria-hidden', 'true');
+    if (made) stage.insertBefore(surface, poster && poster.parentNode === stage ? poster.nextSibling : stage.firstChild);
+    o.cleanup(function () {
+      if (video) { video.removeAttribute('src'); video.load(); }
+      if (made && surface.parentNode) surface.parentNode.removeChild(surface);
+      el.classList.remove('mk-fs-ready');
+    });
+    var ready = function () { if (!el.classList.contains('mk-fs-ready')) el.classList.add('mk-fs-ready'); };
+    var state = { p: 0 }, fit = o.opt('fit', 'cover');
+
+    // ── image sequence on a canvas
+    var N = urls.length, imgs = new Array(N), ok = new Uint8Array(N), drawn = -1, g = { W: 0, H: 0, dpr: 1 };
+    var queue = N ? coarseToFine(N) : [], qi = 0, active = 0, started = false, maxJobs = o.opt('concurrency', 6);
+    function pump() {
+      while (o.alive() && active < maxJobs && qi < queue.length) {
+        (function (i) {
+          var im = new Image();
+          im.decoding = 'async';
+          active++;
+          var done = function (good) {
+            active--;
+            if (!o.alive()) return;
+            if (good) { ok[i] = 1; if (drawn < 0 || Math.abs(i - target()) < Math.abs(drawn - target())) draw(true); }
+            pump();
+          };
+          // ready on load; decode() only warms the decoder (it can stall in a background tab, so never wait on it)
+          im.onload = function () { if (im.decode) im.decode().catch(function () {}); done(true); };
+          im.onerror = function () { done(false); };
+          im.src = urls[i];
+          imgs[i] = im;
+        })(queue[qi++]);
+      }
+    }
+    function startLoading() { if (started) return; started = true; pump(); }
+    function target() { return Math.round(state.p * (N - 1)); }
+    function nearestLoaded(t) {
+      if (ok[t]) return t;
+      for (var d = 1; d < N; d++) {
+        if (t - d >= 0 && ok[t - d]) return t - d;
+        if (t + d < N && ok[t + d]) return t + d;
+      }
+      return -1;
+    }
+    function size() {
+      var W = stage.clientWidth, H = stage.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, o.opt('dpr', phone ? 1.5 : 2));
+      if (W === g.W && H === g.H && dpr === g.dpr) return false;
+      g.W = W; g.H = H; g.dpr = dpr;
+      surface.width = Math.max(1, Math.round(W * dpr));
+      surface.height = Math.max(1, Math.round(H * dpr));
+      return true;
+    }
+    function draw(force) {
+      if (!ctx2) return;
+      var i = nearestLoaded(target());
+      if (i < 0 || (i === drawn && !force)) return;
+      var im = imgs[i], cw = surface.width, ch = surface.height, iw = im.naturalWidth, ih = im.naturalHeight;
+      if (!iw || !ih || !cw || !ch) return;
+      var s = fit === 'contain' ? Math.min(cw / iw, ch / ih) : Math.max(cw / iw, ch / ih);
+      var dw = iw * s, dh = ih * s;
+      ctx2.clearRect(0, 0, cw, ch);
+      ctx2.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+      drawn = i;
+      ready();
+    }
+
+    // ── video: fetched as a Blob (always seekable), one seek in flight at a time, primed for iOS
+    var seeking = false, pending = null;
+    function seek(t) {
+      if (!video || !video.duration) return;
+      if (seeking) { pending = t; return; }
+      seeking = true;
+      video.currentTime = t;
+    }
+    if (video) {
+      o.on(video, 'seeked', function () {
+        seeking = false;
+        ready();
+        if (pending !== null) { var t = pending; pending = null; seek(t); }
+      });
+      o.on(video, 'error', function () { seeking = false; pending = null; });
+      o.on(video, 'loadedmetadata', function () { seek(state.p * video.duration); });
+      var primed = false;
+      o.on(document, 'touchstart', function () {
+        if (primed) return;
+        primed = true;
+        var pr = video.play();
+        if (pr && pr.then) pr.then(function () { video.pause(); seek(state.p * video.duration); }, function () {});
+      }, { passive: true });
+    }
+    var blobUrl = null;
+    function loadVideo() {
+      if (started) return;
+      started = true;
+      fetch(vsrc).then(function (r) { return r.ok ? r.blob() : Promise.reject(new Error(r.status)); }).then(function (b) {
+        if (!o.alive()) return;
+        blobUrl = URL.createObjectURL(b);
+        video.src = blobUrl;
+      }, function () { started = false; });
+    }
+    o.cleanup(function () { if (blobUrl) URL.revokeObjectURL(blobUrl); });
+
+    function render() {
+      if (ctx2) draw(false);
+      else if (video && video.duration) seek(Math.min(state.p, 0.999) * video.duration);
+    }
+    var load = ctx2 ? startLoading : loadVideo;
+    if (o.opt('preload', 'near') === 'eager') load();
+    else o.trigger({ trigger: el, start: function () { return 'top bottom+=' + window.innerHeight; }, onEnter: load, onEnterBack: load });
+    var onInit = function () { if (ctx2 && size()) draw(true); };
+    o.ST.addEventListener('refreshInit', onInit);
+    o.cleanup(function () { o.ST.removeEventListener('refreshInit', onInit); });
+    size();
+
+    var tl = gs.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: { trigger: el, start: 'top top', end: '+=' + o.opt('length', 300) + '%', pin: true, scrub: o.opt('scrub', 0.5), anticipatePin: 1, invalidateOnRefresh: true }
+    });
+    tl.to(state, { p: 1, duration: 1, onUpdate: render }, 0);
+    // caption bands: a long readable plateau, short eased ramps; the first starts shown, the last stays
+    var B = bands.length;
+    bands.forEach(function (b, k) {
+      var r = String(b.getAttribute('data-mk-band') || '').split(/[\s,]+/).map(parseFloat);
+      var a = r[0], z = r[1];
+      if (isNaN(a)) a = k / B;
+      if (isNaN(z)) z = (k + 1) / B;
+      var ramp = Math.min(0.05, (z - a) / 4);
+      if (a > 0) tl.fromTo(b, { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: ramp, ease: 'power2.out' }, a);
+      if (z < 1) tl.to(b, { autoAlpha: 0, y: -16, duration: ramp, ease: 'power2.in' }, z - ramp);
+      o.on(b, 'focusin', function () { var st = tl.scrollTrigger; MK.scrollTo(st.start + (st.end - st.start) * (a + ramp), { duration: 0.6 }); });
+    });
+    tl.set({}, {}, 1);
+  });
+
+  /* M10 · Loop video (idle motion: a character breathing, steam, mist, a swaying field) — a muted inline
+     loop that loads lazily, plays only while it is on screen and the tab is visible, and recovers when the
+     browser refuses autoplay (iOS Low Power Mode) on the visitor's first touch or click. Works inside a
+     transformed parent (camera-path) because visibility is measured from the real on-screen box.
+     Reduced motion: never plays, so only the poster shows. Put the sources in data-src for lazy loading. */
+  function lazySources(v) {
+    var changed = false;
+    if (v.getAttribute('data-src')) { v.src = v.getAttribute('data-src'); v.removeAttribute('data-src'); changed = true; }
+    MK.toArray(v.querySelectorAll('source[data-src]')).forEach(function (s) { s.src = s.getAttribute('data-src'); s.removeAttribute('data-src'); changed = true; });
+    if (changed) v.load();
+  }
+  MK.effect('loop-video', function (el, o) {
+    var v = el.tagName === 'VIDEO' ? el : el.querySelector('video');
+    if (!v) return;
+    v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
+    v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('loop', '');
+    v.removeAttribute('autoplay');
+    var rate = o.opt('rate', 1);
+    var applyRate = function () { if (rate !== 1) { v.defaultPlaybackRate = rate; v.playbackRate = rate; } };   // load() resets it
+    applyRate();
+    o.on(v, 'loadedmetadata', applyRate);
+    var loaded = false, blocked = false, acc = 1, want = false;
+    function play() {
+      if (!v.paused) return;
+      var pr = v.play();
+      if (pr && pr.catch) pr.catch(function () { blocked = true; });
+    }
+    function check() {
+      var r = el.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth;
+      var visibleBox = r.width > 0 && r.height > 0;
+      if (!loaded && visibleBox && r.bottom > -vh && r.top < vh * 2 && r.right > -vw * 0.5 && r.left < vw * 1.5) { loaded = true; lazySources(v); }
+      want = loaded && visibleBox && !document.hidden && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw;
+      if (want) play(); else if (!v.paused) v.pause();
+    }
+    o.loop(function (dt) { acc += dt; if (acc >= 0.2) { acc = 0; check(); } });   // 5 checks per second
+    o.on(document, 'visibilitychange', check);
+    var retry = function () { if (blocked && want) { blocked = false; play(); } };
+    o.on(document, 'touchstart', retry, { passive: true });
+    o.on(document, 'pointerdown', retry);
+    o.on(v, 'playing', function () { el.classList.add('is-playing'); });
+    o.cleanup(function () { v.pause(); el.classList.remove('is-playing'); });
+    check();
+  }, {
+    reduced: function (el) {
+      var v = el.tagName === 'VIDEO' ? el : el.querySelector('video');
+      if (v) { v.removeAttribute('autoplay'); v.pause(); }
+    }
+  });
 });

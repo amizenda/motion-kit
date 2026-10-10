@@ -8,7 +8,9 @@ When you ask an agent to add motion to a page, the skill makes it **read the pag
 animation each section should get**. Only then does it install the kit, apply the effects and check the result
 in a browser.
 
-- **60 effects:** text, images, pinned and horizontal scroll scenes, intros, collections and micro-interactions.
+- **64 effects:** text, images, pinned and horizontal scroll scenes, intros, collections and micro-interactions,
+  plus four built for AI-generated video sites: scroll-scrubbed frame sequences, idle loop videos, a camera that
+  flies over one big artwork, and product burst views.
   Each one is applied with a single `data-mk="…"` attribute.
 - **5 motion personalities (presets):** the same effect feels slow and weighty, or quick and bouncy, depending on
   the preset.
@@ -42,7 +44,7 @@ in a browser.
 |---|---|
 | `SKILL.md` | The instructions the agent follows: the workflow, the question format, the install steps and the rules. |
 | `assets/motion-core.js` | The runtime (`window.MK`, or `import MK`). It wires up GSAP and ScrollTrigger, Lenis smooth scroll, live reduced-motion handling, accessible text splitting, the presets, the scroll lock, and cleanup when the breakpoint changes. |
-| `assets/effects/*.js` | The 60 effects in six files: `text`, `media`, `scroll`, `collections`, `ui`, `intro`. Load only the files you use. |
+| `assets/effects/*.js` | The 64 effects in six files: `text`, `media`, `scroll`, `collections`, `ui`, `intro`. Load only the files you use. |
 | `assets/motion-kit.css` | Structural CSS for every effect: no-flash rules, masks, overlays and fallbacks. |
 | `assets/*.d.ts` | TypeScript types. |
 | `assets/showroom/index.html` | A live demo of every effect. It is also the reference markup. |
@@ -215,8 +217,8 @@ Use these IDs in "Other" answers or in direct requests. Each effect's markup con
 | Group | IDs |
 |---|---|
 | **T · Text** | T1 line-rise · T2 word-rise · T3 char-flip · T4 blur-rise · T5 focus-in · T6 scroll-fill · T7 letter-drop · T8 write-on · T9 count-up · T10 word-cycle · T11 rule-draw · T12 text-path · T13 wordmark-rise |
-| **M · Media** | M1 clip-reveal · M2 parallax · M3 settle · M4 window-grow · M5 grow-inline · M6 zoom-through · M7 velocity-skew · M8 lightbox |
-| **S · Scroll scenes** | S1 hero-exit · S2 drift · S3 depth-layers · S4 pin-crossfade · S5 pin-steps · S6 sticky-steps · S7 horizontal · S8 stack-accordion · S9 scroll-accordion · S10 card-stack · S11 sequence-build · S12 sticky-stats · S13 handoff · S14 cloud-curtain |
+| **M · Media** | M1 clip-reveal · M2 parallax · M3 settle · M4 window-grow · M5 grow-inline · M6 zoom-through · M7 velocity-skew · M8 lightbox · M9 frame-scrub · M10 loop-video |
+| **S · Scroll scenes** | S1 hero-exit · S2 drift · S3 depth-layers · S4 pin-crossfade · S5 pin-steps · S6 sticky-steps · S7 horizontal · S8 stack-accordion · S9 scroll-accordion · S10 card-stack · S11 sequence-build · S12 sticky-stats · S13 handoff · S14 cloud-curtain · S15 camera-path · S16 burst-collapse |
 | **C · Collections** | C1 stagger-up · C2 card-rise · C3 hover-preview · C4 flex-accordion · C5 orbit · C6 drag-carousel · C7 marquee · C8 pendulum · C9 rating |
 | **U · UI** | U1 nav-hide · U2 nav-state · U3 scroll-progress · U4 cursor · U5 magnetic · U6 fill-bloom · U7 grain · U8 tilt · U9 confetti · U10 elastic-pop · U11 fly-to-cart · U12 follow-sticker |
 | **I · Intros** | I1 intro-window · I2 intro-arch · I3 intro-drop · I4 intro-curtain |
@@ -232,7 +234,7 @@ art-directed showpieces rather than drop-in effects: each has a blueprint in
 
 ## Browse every effect live (the showroom)
 
-The showroom is one long page that runs **all 60 effects** on placeholder content. Use it to choose effects before
+The showroom is one long page that runs **all 64 effects** on placeholder content. Use it to choose effects before
 you prompt, or to compare presets.
 
 ### Start a local server
@@ -267,10 +269,11 @@ connection.
 | Always on | U1 nav-hide (the header slides away as you scroll down and returns when you scroll up), U2 nav-state (the header switches theme over dark sections), U3 scroll-progress (top bar), U4 cursor (trailing dot) | Scroll down, then up a little; move the mouse |
 | Intro + hero | I1 intro-window, S1 hero-exit, T1 line-rise (plays after the intro) | Reload to replay the intro; scroll to see the hero part |
 | Text | T1–T12: line, word and character reveals, blur and focus, scroll-fill reading, scrubbed letter-drop, write-on, count-up stats, word-cycle ticker, rule-draw, a text ribbon on a path | Scroll slowly |
-| Media | M1 clip-reveal (bottom, left, centre, circle, plus a scrubbed wide image), M2 parallax, M3 settle, M7 velocity-skew, M8 lightbox | Scroll fast to see the skew; **click a picture** to open the lightbox (Esc closes it) |
+| Media | M1 clip-reveal (bottom, left, centre, circle, plus a scrubbed wide image), M2 parallax, M3 settle, M7 velocity-skew, M8 lightbox, M10 loop-video (starts only once it is on screen) | Scroll fast to see the skew; **click a picture** to open the lightbox (Esc closes it) |
 | Pinned media | M4 window-grow, M5 grow-inline, M6 zoom-through | Scroll through each pin |
 | Scroll scenes | S2 drift, S3 depth-layers, S4 pin-crossfade, S5 pin-steps (snaps to steps; **click the dots**), S6 sticky-steps, S7 horizontal (with nested clip-reveals and parallax), S8 stack-accordion, S9 scroll-accordion, S10 card-stack, S11 sequence-build (a ticket prints and gets stamped), S12 sticky-stats | Scroll; on S5, click a dot to jump to that step |
 | Collections | C1 stagger-up, C2 card-rise, C3 hover-preview, C4 flex-accordion, C5 orbit, C6 drag-carousel, C7 marquee, C8 pendulum, C9 rating | Hover the menu rows (C3) and the columns (C4); click or use ←/→ on the orbit (C5); drag the carousel (C6) and the pendulum line (C8); press **Pause** on the marquee, which also speeds up with your scrolling |
+| Scroll cinema | S15 camera-path (a camera flies over an illustrated map; two M10 loop videos play inside it), M9 frame-scrub (a 60-frame tunnel dive drawn on a canvas), S16 burst-collapse (two products; ingredients burst out with labels and gather back) | Scroll slowly through each; click the map dots or the product pills to jump; scroll back up to play them in reverse |
 | Shop interactions | U11 fly-to-cart, U10 elastic-pop | Click **Into the bag**: the header slides back if it was hidden, the product flies into its bag and the count goes up. Click **+ 100 g** to see the amount pop |
 | Micro-interactions | U5 magnetic, U6 fill-bloom, U9 confetti, U4 cursor label, U8 tilt with sheen | Hover each button; click **Fizz!**; tilt the card with the mouse |
 | Endings | S14 cloud-curtain, S13 handoff, U12 follow-sticker, T13 wordmark-rise (`fit`) | Scroll into the footer; move the mouse over it |
@@ -280,8 +283,8 @@ design.
 
 ### The options panel and URL flags
 
-A small panel in the bottom-right corner switches the page's settings. Each link reloads the showroom with a URL
-flag:
+A small panel in the bottom-right corner switches the page's settings. Click its title to fold it away; it starts
+folded on phones so it never covers a demo. Each link reloads the showroom with a URL flag:
 
 | Panel / flag | What it does |
 |---|---|
@@ -428,8 +431,8 @@ motion-kit/
 │   ├── motion-kit.css        structural CSS for all effects
 │   ├── effects/
 │   │   ├── text.js           T1–T13
-│   │   ├── media.js          M1–M8
-│   │   ├── scroll.js         S1–S14
+│   │   ├── media.js          M1–M10
+│   │   ├── scroll.js         S1–S16
 │   │   ├── collections.js    C1–C9
 │   │   ├── ui.js             U1–U12
 │   │   ├── intro.js          I1–I4

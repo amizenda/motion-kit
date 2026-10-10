@@ -11,8 +11,8 @@ options · cost · reduced-motion behaviour. Defaults come from the active prese
 ## Contents
 - [Common options](#common-options-every-entrance-effect)
 - [T · Text](#t--text-effectstextjs) — T1 line-rise … T13 wordmark-rise
-- [M · Media](#m--media-effectsmediajs) — M1 clip-reveal … M8 lightbox
-- [S · Scroll set pieces](#s--scroll-set-pieces-effectsscrolljs) — S1 hero-exit … S14 cloud-curtain
+- [M · Media](#m--media-effectsmediajs) — M1 clip-reveal … M10 loop-video
+- [S · Scroll set pieces](#s--scroll-set-pieces-effectsscrolljs) — S1 hero-exit … S16 burst-collapse
 - [C · Collections](#c--collections-effectscollectionsjs) — C1 stagger-up … C9 rating
 - [U · UI & micro-interactions](#u--ui--micro-interactions-effectsuijs) — U1 nav-hide … U12 follow-sticker
 - [I · Intros](#i--intros-effectsintrojs) — I1 intro-window … I4 intro-curtain
@@ -247,6 +247,51 @@ the close button collapse it back. Scroll locked, focus moved to Close and resto
 Options: `src` (else `href`, else the img) · `caption`. Non-link elements get `role=button` + Enter/Space.
 Cost: low. Reduced: opens instantly.
 
+### M9 · frame-scrub — scroll draws a film, frame by frame
+*Origin: Apple-style sequences; the scrub stage of AI start/end-frame video chains (Higgsfield and similar).*
+The section pins; scroll draws an image sequence on a canvas, frame-exact in both directions, or seeks a video
+(`video`). Frames load **coarse to fine** (first, last, every 32nd, 16th… then all), so scrubbing works before the
+set has arrived; the nearest loaded frame stands in meanwhile. Captions are bands of progress.
+```html
+<section data-mk="frame-scrub" data-mk-frames="seq/f_####.webp" data-mk-count="90"
+         data-mk-frames-mobile="seq-m/f_####.webp" data-mk-count-mobile="90">
+  <img data-mk-poster src="seq/f_0001.webp" width="1280" height="720" alt="">
+  <div data-mk-band="0 0.3"><h2>The story starts in the hills.</h2></div>
+  <div data-mk-band="0.35 0.65"><h2>…</h2></div>
+  <div data-mk-band="0.7 1"><h2>…</h2></div>
+</section>
+```
+`####` is replaced by the frame number, zero-padded to the same width (`first` sets the starting number). A JSON
+array or a comma list of URLs also works. Video mode: `data-mk-video="clip.mp4"` (+ `data-mk-video-mobile`); the
+clip is fetched as a Blob (so hosts without HTTP range requests still seek), one seek is in flight at a time,
+and the video is primed on the first touch for iOS. Encode it with a short keyframe interval (`-g 8`, `-g 4` for
+phones). A `<canvas data-mk-canvas>` or `[data-mk-stage]` child is used when present.
+Options: `frames` · `count` · `first` (1) · `video` · `…Mobile` variants · `length` (300 % of viewport) · `scrub` (0.5) ·
+`fit` (`cover` | `contain`) · `dpr` (cap: 2 desktop, 1.5 phone) · `preload` (`near` = one screen before | `eager`) ·
+`concurrency` (6). Bands: `data-mk-band="from to"` (0–1; without values they share the length evenly); the first
+starts shown, the last stays. Keyboard focus inside a band scrolls to it.
+Assets: 60–120 frames per scene is plenty (scroll does not need 24 fps), WebP or AVIF, 1280 wide on desktop and a
+native **9:16** set around 720 wide for phones; aim for 2–6 MB per scene. Export with ffmpeg:
+`ffmpeg -i scene.mp4 -vf "fps=15,scale=1280:-2" -c:v libwebp -quality 70 seq/f_%04d.webp`.
+Cost: high while pinned (canvas, many images). Reduced / no JS: the poster and the bands as a static section.
+
+### M10 · loop-video — idle loops that play only on screen
+*Origin: "let the characters move a little" briefs; steam, mist and swaying-field loops.* A muted inline loop that
+loads lazily, plays only while it is on screen and the tab is visible, keeps its poster until the first frame,
+and recovers when autoplay is refused (iOS Low Power Mode) on the visitor's first touch or click. Visibility comes
+from the real on-screen box, so it also works inside a transformed parent such as S15's world.
+```html
+<video data-mk="loop-video" poster="loops/l1.jpg" preload="none" width="640" height="360" aria-hidden="true">
+  <source data-src="loops/l1.webm" type="video/webm">
+  <source data-src="loops/l1.mp4" type="video/mp4">
+</video>
+```
+Put sources in `data-src` (on `<video>` or `<source>`) so nothing downloads until it is within about a screen.
+Do not add `autoplay`: the effect starts it. Options: `rate` (1). Class `.is-playing` once a frame has played.
+Make the loop seamless at the source: start frame = end frame (AI start/end-frame generation), or a forward +
+reversed palindrome (`[0:v]split[a][b];[b]reverse[r];[a][r]concat`). Keep each file small (≈0.5–1.5 MB, 720 wide).
+Cost: low per loop; keep ≤ 4–6 playing at once on phones. Reduced: never plays, so only the poster shows.
+
 ---
 
 ## S · Scroll set pieces (`effects/scroll.js`)
@@ -269,6 +314,7 @@ The hero must start at the top of the page.
 Put `data-mk-exit` on a **wrapper**, so entrance effects inside keep their own transforms.
 Options: `scrub` (true) · `lift` (0.12) · `exitAt` (0.6) · `push` (1.25). Cost: low–med.
 
+The hero clips its overflow (kit CSS), so the push-in never adds a sideways scroll on phones.
 ### S2 · drift — decorative element slides against the scroll
 *Origin: Solenne flowers, nova section heads.* Range defaults to the closest section.
 ```html
@@ -421,6 +467,75 @@ clouds part sideways. Place an **empty marker** where the cover should peak.
 <div data-mk="cloud-curtain" data-mk-tint="rgba(240,168,190,.5)" aria-hidden="true"></div>
 ```
 Options: `length` (250 % of viewport) · `tint` · `fog` (CSS background). Cost: high while active (≈9 large canvases). One per page.
+
+### S15 · camera-path — a camera flies over one big artwork
+*Origin: illustrated-map briefs ("start on the whole picture, zoom to the first character, glide past the
+others").* The section pins; scroll moves a camera over `[data-mk-world]` through a list of stops, holding and
+snapping at each. Everything inside the world moves with it: loop videos (M10) cut from the same art, SVG routes,
+labels. Sharp at any zoom when the world is a vector or a large (6–8K) image, and it fits every screen shape
+(give phones their own stops).
+```html
+<section data-mk="camera-path" data-mk-ratio="16/9"
+         data-mk-stops="0.5 0.5 1; 0.24 0.62 2.6; 0.53 0.36 2.6; 0.5 0.5 1.1"
+         data-mk-stops-mobile="0.5 0.5 1; 0.24 0.62 1.9; 0.53 0.36 1.9; 0.5 0.5 1">
+  <div data-mk-world>
+    <img src="map-8k.jpg" alt="Map of the herb regions">              <!-- first child = the base layer -->
+    <svg viewBox="0 0 1600 900" style="position:absolute;inset:0;width:100%;height:100%"><path data-mk-route d="…"/></svg>
+    <video data-mk="loop-video" style="position:absolute;left:21%;top:58%;width:9%" poster="…">…</video>
+    <div class="anchor" data-mk-keep-size style="position:absolute;left:24%;top:66%;width:0;height:0">
+      <span data-mk-at="1" style="position:absolute;transform:translateX(-50%)">Highlands</span>   <!-- centred under its point -->
+    </div>
+  </div>
+  <div class="captions"><p data-mk-at="0">…</p><p data-mk-at="1">…</p></div>
+  <nav><button data-mk-dot>1</button>…</nav>
+</section>
+```
+Stops: `"x y zoom; …"` or JSON `[{"x":.24,"y":.62,"zoom":2.6}]`. x/y are 0–1 of the world (the point placed at the
+centre of the screen); zoom 1 = the world just covers the screen. Zoom moves in log space, so dives feel even.
+Place everything inside the world in **%** (left/top/width) so it tracks the art at any size. `[data-mk-at="i"]`
+(or `"1,2"`) gets `.is-active` at stop i, anywhere in the section. `[data-mk-route]` SVG paths draw with progress
+(this sets their `stroke-dasharray`, so a dashed style is replaced by the draw). `[data-mk-keep-size]` counter-
+scales so labels stay readable. Put it on a zero-size anchor at the point and centre the label inside it with CSS:
+the effect writes the anchor's transform (and `translate: none`), so a `translate` on the same element would be lost. `[data-mk-cam-depth="0.2"]` layers parallax
+(positive = farther). Dots jump to a stop. The section dispatches `mk:stop` (detail `{index, stop}`) on each change.
+Images inside a transformed world are chosen by their layout size, not the zoom: use one large `src` or set
+`sizes` to about zoom × 100vw. Options: `stops` · `stopsMobile` · `ratio` (else measured) · `per` (120 % per leg) ·
+`hold` (0.3 of each leg spent still) · `scrub` (0.8) · `snap` (true) · `clamp` (true: never show past the edges).
+Cost: med (one transformed layer; heavier with many playing loops). Reduced / no JS: the whole world at full width,
+every label visible.
+
+### S16 · burst-collapse — product rises, ingredients burst out and gather back
+*Origin: product-reveal briefs ("the product appears from within, pulls its ingredients and facts out, gathers
+them back in, then the next product").* The section pins; per `[data-mk-set]`: the product rises (with an optional
+glow), its items burst from the centre to their spots, each tag's leader line draws, the info rises, a hold (snap
+point), then everything collapses back before the next set. The last set stays (`end="collapse"` to clear it).
+Items bob gently while the section is pinned.
+```html
+<section data-mk="burst-collapse">
+  <nav><button data-mk-dot>Cleanser</button><button data-mk-dot>Serum</button></nav>
+  <div data-mk-set>
+    <div data-mk-stage>
+      <i class="glow" data-mk-glow></i>
+      <img data-mk-product src="cleanser.png" alt="Herbal cleanser">
+      <ul data-mk-items>
+        <li data-mk-item data-mk-angle="-150" data-mk-dist="0.72"><img src="green-tea.png" alt=""><span data-mk-tag>Green tea</span></li>
+        <li data-mk-item data-mk-x="34" data-mk-y="-26" data-mk-rot="6"><img src="turmeric.png" alt=""><span data-mk-tag>Turmeric</span></li>
+      </ul>
+    </div>
+    <div data-mk-info><h3>Herbal cleanser</h3><p>…</p></div>
+  </div>
+  <div data-mk-set>…</div>
+</section>
+```
+Item spots: `data-mk-angle` (degrees, 0 = right, 90 = down) + `data-mk-dist` (0–1 of the stage half-size, default
+0.72), or `data-mk-x` / `data-mk-y` (% offset from the centre); without either they spread evenly from the top.
+`data-mk-rot` is the resting tilt. The bob runs on the item's `img` (or `[data-mk-float]`), never on the item,
+so transforms never fight. Tags draw a leader line through `--mk-line` (0–1) on their `::before`; restyle freely.
+Use real product photos or renders (cut out, ≥ 2000 px tall); never let AI redraw a label.
+Options: `per` (200 % per set) · `hold` (1) · `scrub` (0.8) · `snap` (true) · `end` (`hold` | `collapse`) ·
+`enterFirst` (false: the first product already stands when the section scrolls in; true: it rises from an empty stage).
+Classes: `.is-current` on the set; `.is-on` / `.is-now` + `aria-current` on dots. Cost: med.
+Reduced: every set laid out statically with items at their spots. No JS: each product followed by a row of items.
 
 ---
 
