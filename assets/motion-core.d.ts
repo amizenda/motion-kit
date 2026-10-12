@@ -32,6 +32,8 @@ export interface MKInitOptions {
   reduced?: boolean;
   fontTimeout?: number;
   debug?: boolean;
+  /** Refresh ScrollTriggers in document order (default true); false keeps GSAP's position-based sort. */
+  pageOrder?: boolean;
   gsap?: unknown; ScrollTrigger?: unknown; Lenis?: unknown; SplitText?: unknown; CustomEase?: unknown;
 }
 

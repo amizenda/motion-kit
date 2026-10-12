@@ -795,7 +795,34 @@
     MK.refresh();
   };
 
-  /** Debounced ScrollTrigger refresh (sorted, so pins created out of order still measure correctly). */
+  /* ScrollTriggers refresh in page order. A pin's spacing only reaches the triggers refreshed after it, so a trigger
+     further down the page must never refresh before a pin above it. GSAP's default sort() orders by where each
+     trigger element is drawn at that instant (scroll + getBoundingClientRect().top). That is unreliable while a
+     section is pinned, overlapped by a negative margin, transformed, or caught mid-resize: a later section can sort
+     first, refresh without the pin above it and collapse to start 0 — and every later refresh keeps the broken
+     order. Document order does not move, so sort by it. An explicit refreshPriority still wins, as in GSAP. */
+  function pageOrder(a, b) {
+    var av = a.vars || {}, bv = b.vars || {};
+    var pa = av.refreshPriority || 0, pb = bv.refreshPriority || 0;
+    if (pa !== pb) return pb - pa;
+    if (!!av.containerAnimation !== !!bv.containerAnimation) return av.containerAnimation ? 1 : -1;
+    var ea = a.trigger, eb = b.trigger;
+    if (ea && eb && ea !== eb && ea.nodeType === 1 && eb.nodeType === 1) {
+      var pos = ea.compareDocumentPosition(eb);
+      if (pos & 4) return -1;                  // b follows a, or sits inside it
+      if (pos & 2) return 1;                   // b precedes a, or contains it
+    }
+    return (a.start || 0) - (b.start || 0);
+  }
+  function usePageOrder() {
+    if (!ST || ST.__mkPageOrder) return;
+    var nativeSort = ST.sort;
+    ST.sort = function (func) { return nativeSort.call(ST, typeof func === 'function' ? func : pageOrder); };
+    ST.addEventListener('refreshInit', function () { ST.sort(); });   // GSAP's own refreshes (resize, load) too
+    ST.__mkPageOrder = true;
+  }
+
+  /** Debounced ScrollTrigger refresh (page-ordered, so pins created or rebuilt out of order still measure correctly). */
   MK.refresh = function (now) {
     if (!ST) return;
     clearTimeout(refreshTimer);
@@ -842,6 +869,7 @@
    *   reduced      undefined = follow the OS; true/false forces (also ?mk-reduce / ?mk-motion)
    *   fontTimeout  2500   — max ms start() waits for web fonts
    *   debug        false  — ScrollTrigger markers (also ?mk-debug)
+   *   pageOrder    true   — refresh ScrollTriggers in document order (see pitfalls.md § D); false keeps GSAP's sort
    *   gsap, ScrollTrigger, Lenis, SplitText, CustomEase — pass modules when bundling
    */
   MK.init = function (opts) {
@@ -880,6 +908,7 @@
       debug: !!opts.debug || /[?&]mk-debug\b/.test(query())
     };
     ST.config({ ignoreMobileResize: true });
+    if (opts.pageOrder !== false) usePageOrder();
     if (MK.config.debug) ST.defaults({ markers: true });
     setPreset(opts.preset || html.getAttribute('data-mk-preset') || 'editorial', opts.tokens);
 

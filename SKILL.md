@@ -196,7 +196,8 @@ reduced-motion preference changes, and then the setup runs again.
 2. Reduced motion is honoured live. Never read the media query once, and never hand-roll a broken query.
 3. Interactive elements are never hidden from keyboard or screen-reader users while they wait for a reveal.
 4. One owner per transform. Never put CSS transitions on GSAP-animated properties.
-5. ScrollTriggers are created in page order and refreshed after fonts, images and pins settle.
+5. ScrollTriggers are created and refreshed in page order (document order, not measured position), and refreshed
+   after fonts, images and pins settle.
 6. Every image that moves inside a frame has overscan. Every scrubbed tween that starts from a value something else
    also changes uses `fromTo`.
 7. Loops pause off-screen and stop when settled. Smoothing is frame-rate independent.

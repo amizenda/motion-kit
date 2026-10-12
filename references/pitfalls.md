@@ -56,9 +56,16 @@ Run the checklist before reporting the work as done.
 - [ ] Don't use relative values (`'-=30'`) in tweens with `invalidateOnRefresh` — they compound on every refresh.
 
 ## D · ScrollTrigger & pins
-- [ ] Create ScrollTriggers in page order, or call `MK.refresh()` (sorts) after building them out of order [Dewpoint
-  titles fired 3600 px early because they were created before a pin above them]. ✅ `MK.start()` scans in DOM order
-  and refreshes sorted.
+- [ ] ScrollTriggers must refresh in page order: a pin's spacing only reaches the triggers refreshed after it [Dewpoint
+  titles fired 3600 px early because they were created before a pin above them]. Creating them in page order is not
+  enough on its own: GSAP's default `ScrollTrigger.sort()` orders by where each trigger is drawn at that instant
+  (`scroll + getBoundingClientRect().top`), which is wrong while a section is pinned, overlapped by a negative margin,
+  transformed or caught mid-resize. A later section then sorts first, refreshes without the pin above it and collapses
+  to start 0 — and every later refresh keeps the broken order [two pins joined by a negative-margin seam
+  (camera-path → frame-scrub) broke after one window resize]. ✅ `MK.init()` makes `ScrollTrigger.sort()` use
+  document order and re-sorts on every refresh (`refreshInit`, so GSAP's own resize/load refreshes too); pins created
+  or rebuilt out of order still measure correctly. An explicit `refreshPriority` still wins; `containerAnimation`
+  triggers go last; `MK.init({ pageOrder: false })` restores GSAP's sort.
 - [ ] Pinned sections: give them a height (`100vh`/`min-height`), no `overflow:hidden` / `transform` / `contain` on
   ancestors, and don't nest pins.
 - [ ] Recompute layout-dependent values in function-based tweens with `invalidateOnRefresh: true`, and re-measure in
@@ -148,6 +155,8 @@ Run the checklist before reporting the work as done.
    ```js
    MK.inspect().filter(x => x.unknown.length || !x.ready)   // → []
    ScrollTrigger.getAll().filter(t => t.pin).map(t => [t.trigger, Math.round(t.start), Math.round(t.end)])
+   // pin starts must grow in page order (re-check after a window resize while scrolled inside a pin)
+   ScrollTrigger.getAll().filter(t => t.pin).map(t => Math.round(t.start)).every((s, i, a) => !i || s >= a[i - 1])   // → true
    ```
 3. **Scroll the whole page down and back up** (slowly and fast). Nothing may stay hidden, jump, or flash. Check pins hand
    over without gaps (`?mk-debug` shows markers).
