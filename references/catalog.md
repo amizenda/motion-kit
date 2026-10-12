@@ -268,8 +268,10 @@ and the video is primed on the first touch for iOS. Encode it with a short keyfr
 phones). A `<canvas data-mk-canvas>` or `[data-mk-stage]` child is used when present.
 Options: `frames` · `count` · `first` (1) · `video` · `…Mobile` variants · `length` (300 % of viewport) · `scrub` (0.5) ·
 `fit` (`cover` | `contain`) · `dpr` (cap: 2 desktop, 1.5 phone) · `preload` (`near` = one screen before | `eager`) ·
-`concurrency` (6). Bands: `data-mk-band="from to"` (0–1; without values they share the length evenly); the first
-starts shown, the last stays. Keyboard focus inside a band scrolls to it.
+`concurrency` (6) · `snap` (off; `true` = start and end, or progress points `"0 0.4 1"`: one flick glides to the next
+point, like camera-path's stops — put a point at the end of each clip joined into the sequence) · `snapDuration` (max
+seconds of that glide, 1.4). Bands: `data-mk-band="from to"` (0–1; without values they share the length evenly); the
+first starts shown, the last stays. Keyboard focus inside a band scrolls to it.
 Assets: 60–120 frames per scene is plenty (scroll does not need 24 fps), WebP or AVIF, 1280 wide on desktop and a
 native **9:16** set around 720 wide for phones; aim for 2–6 MB per scene. Export with ffmpeg:
 `ffmpeg -i scene.mp4 -vf "fps=15,scale=1280:-2" -c:v libwebp -quality 70 seq/f_%04d.webp`.

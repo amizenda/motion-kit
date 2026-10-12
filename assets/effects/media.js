@@ -358,6 +358,8 @@
      draws an image sequence on a canvas, frame-exact in both directions (or seeks a video with `video`).
      Frames load coarse-to-fine, so scrubbing works before the set is complete; the nearest loaded frame
      stands in meanwhile. Children [data-mk-band="0.1 0.35"] fade in and out over that progress range (0..1).
+     `snap` (off by default): one flick glides to the next point, like camera-path's stops — `true` = start and end,
+     or a list of progress points `"0 0.4 1"` (e.g. the ends of the clips joined into the sequence).
      Without motion: the [data-mk-poster] image and the bands show as a normal static section. */
   function seqUrls(spec, count, first) {
     // "seq/f_####.webp" + count → seq/f_0001.webp …; a JSON array or a comma list is used as given
@@ -381,6 +383,15 @@
     add(0); add(n - 1);
     for (var step = 32; step >= 1; step = step >> 1) for (var i = 0; i < n; i += step) add(i);
     return order;
+  }
+  // snap points of a scrubbed scene: true → start and end; a number or a list "0 0.4 1" → those progress points (0–1)
+  function snapPoints(v) {
+    if (v == null || v === false) return null;
+    var pts = v === true ? [0, 1] : typeof v === 'number' ? [0, v, 1] :
+      (Array.isArray(v) ? v : String(v).split(/[\s,]+/)).map(parseFloat);
+    pts = pts.filter(function (p) { return isFinite(p) && p >= 0 && p <= 1; }).sort(function (a, b) { return a - b; });
+    pts = pts.filter(function (p, i) { return !i || p !== pts[i - 1]; });
+    return pts.length ? pts : null;
   }
   MK.effect('frame-scrub', function (el, o) {
     var gs = o.gsap, phone = !o.is.desktop;
@@ -519,9 +530,13 @@
     o.cleanup(function () { o.ST.removeEventListener('refreshInit', onInit); });
     size();
 
+    var snap = snapPoints(o.opt('snap', null));
     var tl = gs.timeline({
       defaults: { ease: 'none' },
-      scrollTrigger: { trigger: el, start: 'top top', end: '+=' + o.opt('length', 300) + '%', pin: true, scrub: o.opt('scrub', 0.5), anticipatePin: 1, invalidateOnRefresh: true }
+      scrollTrigger: {
+        trigger: el, start: 'top top', end: '+=' + o.opt('length', 300) + '%', pin: true, scrub: o.opt('scrub', 0.5), anticipatePin: 1, invalidateOnRefresh: true,
+        snap: snap ? { snapTo: snap, duration: { min: 0.4, max: o.opt('snapDuration', 1.4) }, delay: 0.05, ease: 'power2.inOut' } : false
+      }
     });
     tl.to(state, { p: 1, duration: 1, onUpdate: render }, 0);
     // caption bands: a long readable plateau, short eased ramps; the first starts shown, the last stays
