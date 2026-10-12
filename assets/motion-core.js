@@ -195,6 +195,7 @@
     if (MK.lenis || !deps.Lenis) return;
     var o = assignDeep(assignDeep({}, MK.t.lenis), MK.config.lenis || {});
     try { MK.lenis = new deps.Lenis(o); } catch (e) { warn('Lenis failed to start:', e); return; }
+    hookLenis(MK.lenis);
     MK.lenis.on('scroll', ST.update);
     lenisTick = function (time) { if (MK.lenis) MK.lenis.raf(time * 1000); };
     gsap.ticker.add(lenisTick);
@@ -294,6 +295,89 @@
     MK.scrollTo(target, { focus: target !== 0 });
     if (history.pushState) history.pushState(null, '', href);
   }
+
+  /* --------------------------------------------------------------- advance */
+
+  /* Pinned scenes with stops (camera-path, frame-scrub with snap) can advance on intent: the first wheel notch or
+     swipe inside the scene glides straight to the next stop in that direction, and input is held until it lands.
+     ScrollTrigger's snap alone only fires once the scroll has fully stopped: with Lenis smoothing, a light scroll
+     creeps a few percent, sits still for about a second, then glides, and every new notch restarts that wait.
+     Works through Lenis's virtualScroll hook (it sees wheel and touch before they scroll); without Lenis the scene
+     keeps the plain snap, which also stays on as the fallback for the scrollbar and the keyboard. After a glide a
+     trackpad's inertia stream is swallowed until it goes quiet, so one flick never skips two stops. */
+  var adv = { list: [], busy: false, settle: false, last: 0, used: false, acc: 0 };
+  function advanceTarget(dir, y) {
+    for (var i = 0; i < adv.list.length; i++) {
+      var a = adv.list[i], s = a.st.start, span = a.st.end - s, pts = a.points, k;
+      if (!(span > 0)) continue;
+      if (dir > 0 ? (y < s - 2 || y > s + span - 2) : (y < s + 2 || y > s + span + 2)) continue;
+      var p = (y - s) / span;
+      if (dir > 0) { for (k = 0; k < pts.length; k++) if ((pts[k] - p) * span > 2) return { a: a, y: Math.round(s + pts[k] * span) }; }
+      else { for (k = pts.length - 1; k >= 0; k--) if ((p - pts[k]) * span > 2) return { a: a, y: Math.round(s + pts[k] * span) }; }
+    }
+    return null;
+  }
+  function advanceGo(t) {
+    adv.busy = true;
+    adv.settle = true;
+    MK.lenis.scrollTo(t.y, {
+      duration: t.a.duration, easing: t.a.ease, lock: true, force: true,
+      onComplete: function () { adv.busy = false; }
+    });
+  }
+  function onIntent(data) {
+    var ev = data.event, type = ev.type, now = Date.now();
+    if (!adv.list.length || lockCount || MK.reduced || ev.ctrlKey) return true;
+    var tg = ev.target;
+    if (tg && tg.closest && tg.closest('[data-lenis-prevent],[data-lenis-prevent-wheel],[data-lenis-prevent-touch]')) return true;
+    var hold = function () { if (ev.cancelable) ev.preventDefault(); return false; };
+    if (type === 'touchstart') { adv.used = false; adv.acc = 0; return true; }
+    if (type === 'touchend') return true;
+    var touch = type === 'touchmove', dy = data.deltaY;
+    if (!touch) {                                        // wheel: one stream of events per gesture
+      var gap = now - adv.last;
+      adv.last = now;
+      if (adv.busy) return hold();
+      if (adv.settle && gap < 200) return hold();        // the tail of the gesture that started the glide
+      adv.settle = false;
+    } else if (adv.busy || adv.used) return hold();
+    if (!dy) return true;
+    if (touch) adv.acc += dy;
+    var dir = (touch ? adv.acc : dy) > 0 ? 1 : -1;
+    var t = advanceTarget(dir, window.pageYOffset);
+    if (!t) return true;                                 // no stop that way: leave the scene normally
+    if (touch) {
+      if (!ev.cancelable) return true;                   // the browser is already scrolling; the snap lands it
+      ev.preventDefault();
+      if (Math.abs(adv.acc) < 6) return false;           // a few px of travel before it counts as a swipe
+      adv.used = true;
+    } else ev.preventDefault();
+    advanceGo(t);
+    return false;
+  }
+  function hookLenis(lenis) {
+    var user = lenis.options.virtualScroll;
+    lenis.options.virtualScroll = function (data) {
+      if (onIntent(data) === false) return false;
+      return user ? user(data) : true;
+    };
+  }
+  /**
+   * Advance a pinned ScrollTrigger stop to stop on intent (see above). points: progress values 0..1.
+   * opts: { duration (s, 1.2), ease (GSAP ease, 'power2.inOut') }. Returns a function that removes it.
+   */
+  MK.advance = function (st, points, opts) {
+    opts = opts || {};
+    var a = {
+      st: st, points: points.slice().sort(function (x, y) { return x - y; }),
+      duration: opts.duration || 1.2, ease: gsap.parseEase(opts.ease || 'power2.inOut')
+    };
+    adv.list.push(a);
+    return function () {
+      var i = adv.list.indexOf(a);
+      if (i > -1) adv.list.splice(i, 1);
+    };
+  };
 
   /* -------------------------------------------------------------- velocity */
 

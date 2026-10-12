@@ -359,7 +359,8 @@
      Frames load coarse-to-fine, so scrubbing works before the set is complete; the nearest loaded frame
      stands in meanwhile. Children [data-mk-band="0.1 0.35"] fade in and out over that progress range (0..1).
      `snap` (off by default): one flick glides to the next point, like camera-path's stops — `true` = start and end,
-     or a list of progress points `"0 0.4 1"` (e.g. the ends of the clips joined into the sequence).
+     or a list of progress points `"0 0.4 1"` (e.g. the ends of the clips joined into the sequence). It lands once
+     the scroll stops; `advance` glides on the first wheel notch or swipe instead (see MK.advance; a number = seconds).
      Without motion: the [data-mk-poster] image and the bands show as a normal static section. */
   function seqUrls(spec, count, first) {
     // "seq/f_####.webp" + count → seq/f_0001.webp …; a JSON array or a comma list is used as given
@@ -530,15 +531,17 @@
     o.cleanup(function () { o.ST.removeEventListener('refreshInit', onInit); });
     size();
 
-    var snap = snapPoints(o.opt('snap', null));
+    var snap = snapPoints(o.opt('snap', null)), advance = o.opt('advance', false);
+    if (advance && !snap) snap = [0, 1];
     var tl = gs.timeline({
       defaults: { ease: 'none' },
       scrollTrigger: {
         trigger: el, start: 'top top', end: '+=' + o.opt('length', 300) + '%', pin: true, scrub: o.opt('scrub', 0.5), anticipatePin: 1, invalidateOnRefresh: true,
-        snap: snap ? { snapTo: snap, duration: { min: 0.4, max: o.opt('snapDuration', 1.4) }, delay: 0.05, ease: 'power2.inOut' } : false
+        snap: snap ? { snapTo: snap, duration: { min: 0.4, max: o.opt('snapDuration', 1.4) }, delay: 0.05, ease: 'power2.inOut', inertia: !advance } : false
       }
     });
     tl.to(state, { p: 1, duration: 1, onUpdate: render }, 0);
+    if (advance) o.cleanup(MK.advance(tl.scrollTrigger, snap, { duration: typeof advance === 'number' ? advance : o.opt('snapDuration', 1.4) }));
     // caption bands: a long readable plateau, short eased ramps; the first starts shown, the last stays
     var B = bands.length;
     bands.forEach(function (b, k) {

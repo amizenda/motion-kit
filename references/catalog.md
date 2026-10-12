@@ -270,7 +270,8 @@ Options: `frames` · `count` · `first` (1) · `video` · `…Mobile` variants �
 `fit` (`cover` | `contain`) · `dpr` (cap: 2 desktop, 1.5 phone) · `preload` (`near` = one screen before | `eager`) ·
 `concurrency` (6) · `snap` (off; `true` = start and end, or progress points `"0 0.4 1"`: one flick glides to the next
 point, like camera-path's stops — put a point at the end of each clip joined into the sequence) · `snapDuration` (max
-seconds of that glide, 1.4). Bands: `data-mk-band="from to"` (0–1; without values they share the length evenly); the
+seconds of that glide, 1.4) · `advance` (off; on = the first wheel notch or swipe glides straight to the next point,
+without `snap` = start and end; a number = seconds of the glide, else `snapDuration`. Needs Lenis; see `MK.advance`). Bands: `data-mk-band="from to"` (0–1; without values they share the length evenly); the
 first starts shown, the last stays. Keyboard focus inside a band scrolls to it.
 Assets: 60–120 frames per scene is plenty (scroll does not need 24 fps), WebP or AVIF, 1280 wide on desktop and a
 native **9:16** set around 720 wide for phones; aim for 2–6 MB per scene. Export with ffmpeg:
@@ -502,7 +503,9 @@ the effect writes the anchor's transform (and `translate: none`), so a `translat
 (positive = farther). Dots jump to a stop. The section dispatches `mk:stop` (detail `{index, stop}`) on each change.
 Images inside a transformed world are chosen by their layout size, not the zoom: use one large `src` or set
 `sizes` to about zoom × 100vw. Options: `stops` · `stopsMobile` · `ratio` (else measured) · `per` (120 % per leg) ·
-`hold` (0.3 of each leg spent still) · `scrub` (0.8) · `snap` (true) · `clamp` (true: never show past the edges).
+`hold` (0.3 of each leg spent still) · `scrub` (0.8) · `snap` (true) · `clamp` (true: never show past the edges) ·
+`advance` (off; on = the first wheel notch or swipe glides straight to the next stop and holds input until it lands,
+instead of waiting for the scroll to stop; a number = seconds of the glide, 1.1. Needs Lenis; see `MK.advance`).
 Cost: med (one transformed layer; heavier with many playing loops). Reduced / no JS: the whole world at full width,
 every label visible.
 

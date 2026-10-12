@@ -170,6 +170,7 @@ MK.apply(el, 'name' | ['a','b'], { option: value })   // one element; returns a 
 MK.effect(name, setup, { reduced: fn | 'same', intro: bool })   // register a custom effect
 MK.t                      // active tokens: ease.out|text|inOut|in|soft|pop|elastic, dur.xs…xl, stagger.*, rise, start
 MK.scrollTo(target, { offset, duration, focus })   MK.lock() / MK.unlock()   MK.refresh()
+MK.advance(st, points, { duration, ease })   // pinned scene: one wheel notch / swipe glides to the next stop (Lenis)
 MK.velocity()             // smoothed scroll speed px/s      MK.damp(a, b, rate, dt)  // frame-rate independent
 MK.confetti(x, y, opts)   // with ui.js                       MK.introDone() / MK.whenIntro()
 Events: mk:intro-done (document) · mk:landed (cart) · mk:reveal (dispatch inside a nav-hide header to show it) · mk:orbit · mk:stamp

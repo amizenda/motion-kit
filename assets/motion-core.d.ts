@@ -83,6 +83,9 @@ export interface MotionKit {
   scrollTo(target: Element | string | number, opts?: { offset?: number; duration?: number; easing?: (t: number) => number; immediate?: boolean; focus?: boolean; force?: boolean; onComplete?: () => void }): void;
   lock(): void; unlock(all?: boolean): void; isLocked(): boolean;
   velocity(): number;
+  /** Advance a pinned ScrollTrigger stop to stop on intent: the first wheel notch or swipe inside it glides to the next
+   *  progress point (0..1) in that direction and holds input until it lands (needs Lenis). Returns a remover. */
+  advance(st: unknown, points: number[], opts?: { duration?: number; ease?: string }): () => void;
   introDone(): void; whenIntro(): Promise<void>;
   split(el: Element, type: 'lines' | 'words' | 'chars', opts?: { mask?: boolean; fallback?: boolean }): MKSplit;
   withContainer<T extends Record<string, unknown>>(el: Element, vars: T): T;

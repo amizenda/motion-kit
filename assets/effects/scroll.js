@@ -561,7 +561,8 @@
   /* S15 · Camera path (illustrated maps, big artworks: "start on the whole picture, zoom to the first
      character, glide past the others") — the section pins and scroll flies a camera over one large layer,
      [data-mk-world], through stops {x, y, zoom}: x/y are 0..1 of the world, zoom 1 = the world just covers
-     the screen. The camera holds at each stop and snaps to it. Everything inside the world moves with it
+     the screen. The camera holds at each stop and snaps to it (`advance`: the first wheel notch or swipe glides
+     straight to the next stop, see MK.advance). Everything inside the world moves with it
      (loop videos, SVG, labels placed in %). [data-mk-at="i"] lights up at stop i, [data-mk-route] SVG paths
      draw with progress, [data-mk-cam-depth] layers parallax, [data-mk-keep-size] labels keep their size.
      Without motion: the whole world shows at full width with every label visible. */
@@ -646,15 +647,19 @@
     o.ST.addEventListener('refreshInit', onInit);
     o.cleanup(function () { o.ST.removeEventListener('refreshInit', onInit); });
     var snapTo = stops.map(function (s, i) { return i / (N - 1); });
+    var advance = o.opt('advance', false);
     var tw = gs.to(state, {
       p: 1, ease: 'none', onUpdate: function () { render(state.p); },
       scrollTrigger: {
         trigger: el, start: 'top top', end: '+=' + (N - 1) * o.opt('per', 120) + '%',
         pin: true, scrub: o.opt('scrub', 0.8), anticipatePin: 1, invalidateOnRefresh: true,
-        snap: o.opt('snap', true) ? { snapTo: snapTo, duration: { min: 0.3, max: 0.9 }, delay: 0.05, ease: 'power2.inOut' } : false
+        // with advance, the snap is only the fallback: no inertia, or the lagging scrub after a glide reads as a
+        // flick and carries the camera one stop past where the glide landed
+        snap: o.opt('snap', true) ? { snapTo: snapTo, duration: { min: 0.3, max: 0.9 }, delay: 0.05, ease: 'power2.inOut', inertia: !advance } : false
       }
     });
     render(0);
+    if (advance && o.opt('snap', true)) o.cleanup(MK.advance(tw.scrollTrigger, snapTo, { duration: typeof advance === 'number' ? advance : 1.1 }));
     dots.forEach(function (d, i) {
       o.on(d, 'click', function (e) {
         e.preventDefault();
