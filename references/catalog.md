@@ -503,9 +503,12 @@ the effect writes the anchor's transform (and `translate: none`), so a `translat
 (positive = farther). Dots jump to a stop. The section dispatches `mk:stop` (detail `{index, stop}`) on each change.
 Images inside a transformed world are chosen by their layout size, not the zoom: use one large `src` or set
 `sizes` to about zoom × 100vw. Options: `stops` · `stopsMobile` · `ratio` (else measured) · `per` (120 % per leg) ·
-`hold` (0.3 of each leg spent still) · `scrub` (0.8) · `snap` (true) · `clamp` (true: never show past the edges) ·
+`hold` (0.3 of each leg spent still) · `ease` (the camera's curve between stops: the preset's `inOut`; a token such as
+`soft` or a GSAP ease) · `scrub` (0.8) · `snap` (true) · `clamp` (true: never show past the edges) ·
 `advance` (off; on = the first wheel notch or swipe glides straight to the next stop and holds input until it lands,
-instead of waiting for the scroll to stop; a number = seconds of the glide, 1.1. Needs Lenis; see `MK.advance`).
+instead of waiting for the scroll to stop; a number = seconds of the glide, 1.1. Needs Lenis; see `MK.advance`). The
+glide scrolls linearly, so the camera's own `ease` shapes the move; for a calm glide use `ease="soft"` and `hold="0.1"`
+(the camera then moves through most of the glide instead of darting across the middle of it).
 Cost: med (one transformed layer; heavier with many playing loops). Reduced / no JS: the whole world at full width,
 every label visible.
 

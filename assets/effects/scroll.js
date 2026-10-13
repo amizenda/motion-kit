@@ -592,7 +592,7 @@
     var keeps = MK.toArray(world.querySelectorAll('[data-mk-keep-size]'));
     o.own([world].concat(layers, keeps, paths));
     flag(el, 'mk-cam-on', o);
-    var ease = gs.parseEase(o.ease('inOut')) || function (x) { return x; }, hold = MK.clamp(o.opt('hold', 0.3), 0, 0.9), edges = o.opt('clamp', true);
+    var ease = gs.parseEase(o.ease(o.opt('ease', 'inOut'))) || function (x) { return x; }, hold = MK.clamp(o.opt('hold', 0.3), 0, 0.9), edges = o.opt('clamp', true);
     var g = { W: 0, H: 0, bw: 0, bh: 0 }, lens = [], last = -1, state = { p: 0 };
     var depth = layers.map(function (l) { return parseFloat(l.getAttribute('data-mk-cam-depth')) || 0; });
     function measure() {
@@ -659,7 +659,9 @@
       }
     });
     render(0);
-    if (advance && o.opt('snap', true)) o.cleanup(MK.advance(tw.scrollTrigger, snapTo, { duration: typeof advance === 'number' ? advance : 1.1 }));
+    // the glide scrolls linearly: the camera already eases between stops, and easing the scroll too stacks the two
+    // curves, so the camera covers most of a leg in a fraction of the glide and reads as a jump
+    if (advance && o.opt('snap', true)) o.cleanup(MK.advance(tw.scrollTrigger, snapTo, { duration: typeof advance === 'number' ? advance : 1.1, ease: 'none' }));
     dots.forEach(function (d, i) {
       o.on(d, 'click', function (e) {
         e.preventDefault();
