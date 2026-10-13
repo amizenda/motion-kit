@@ -117,6 +117,14 @@ Run the checklist before reporting the work as done.
 - [ ] Idle loop videos: muted + playsinline + loop, lazy `data-src`, play only while on screen and the tab is visible,
   retry on the first touch when autoplay is refused, never `autoplay` in the markup (it ignores reduced motion).
   Set `defaultPlaybackRate` as well as `playbackRate`: `load()` resets the rate. ✅ loop-video.
+- [ ] Two or more playing videos halve the frame rate of the whole page in Chrome (Windows at least): its frame-interval
+  decider reads several video streams as a video call and runs the display at half refresh (trace:
+  `FrameIntervalDeciderResult` `MATCHER_TYPE_VIDEO_CONFERENCE`, `run_at_half_refresh_rate: true`). Every scroll
+  animation then drops to 30 fps the moment a second loop starts [camera-path over a map with four character loops:
+  a stutter at the end of each glide between two characters, none at the stop with one loop]. Chrome keeps counting
+  a just-paused video for about 0.2 s, so a pause and a play in the same instant still trigger it. ✅ loop-video:
+  while the page scrolls only the visible loop nearest the centre plays and a hand-over waits 0.35 s; at rest every
+  visible loop plays again. Test it with real wheel input and a trace (a hidden preview pane pauses video).
 - [ ] Anything scaled past its section (a pushed-in hero, a ribbon that bleeds, a zoomed layer) needs a clipping
   parent, or the page gains a sideways scroll that phones let visitors pan into. Check `scrollWidth` against
   `clientWidth` at the end of the page, after every scrubbed effect has run. ✅ hero-exit clips itself.

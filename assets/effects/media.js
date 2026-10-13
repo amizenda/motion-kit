@@ -561,12 +561,38 @@
      loop that loads lazily, plays only while it is on screen and the tab is visible, and recovers when the
      browser refuses autoplay (iOS Low Power Mode) on the visitor's first touch or click. Works inside a
      transformed parent (camera-path) because visibility is measured from the real on-screen box.
+     One loop plays at a time: Chrome treats a page with two or more playing videos as a video call and halves
+     the display rate of the whole page (its frame-interval decider's video-conference matcher), so every scroll
+     animation drops to 30 fps the moment a second loop starts — on a camera-path it showed as a stutter at the end
+     of each glide between two characters. So while the page scrolls, only the visible loop nearest the centre of
+     the screen plays and the others hold their frame; once it rests (0.6 s), every visible loop plays again.
+     data-mk-solo="false" lets a loop play alongside the rest even while scrolling.
      Reduced motion: never plays, so only the poster shows. Put the sources in data-src for lazy loading. */
   function lazySources(v) {
     var changed = false;
     if (v.getAttribute('data-src')) { v.src = v.getAttribute('data-src'); v.removeAttribute('data-src'); changed = true; }
     MK.toArray(v.querySelectorAll('source[data-src]')).forEach(function (s) { s.src = s.getAttribute('data-src'); s.removeAttribute('data-src'); changed = true; });
     if (changed) v.load();
+  }
+  var loops = [], soloOn = null, soloPausedAt = 0, lastMove = 0;
+  function pickSolo() {
+    var best = null, i, L, now = Date.now();
+    // at rest nothing else moves, so the half rate costs nothing: every visible loop plays. The first scroll pauses
+    // all but one; Chrome needs about 0.2 s to notice, which a pinned scene's soft start covers
+    if (Math.abs(MK.velocity()) > 0) lastMove = now;
+    if (now - lastMove > 600) {
+      soloOn = null;
+      for (i = 0; i < loops.length; i++) { L = loops[i]; if (L.solo) { if (L.want) L.play(); else L.pause(); } }
+      return;
+    }
+    for (i = 0; i < loops.length; i++) { L = loops[i]; if (L.solo && L.want && (!best || L.dist < best.dist)) best = L; }
+    // keep the one playing until another is clearly nearer, so two loops at equal distance don't take turns
+    if (soloOn && soloOn.want && best && best !== soloOn && soloOn.dist - best.dist < 48) best = soloOn;
+    soloOn = best;
+    for (i = 0; i < loops.length; i++) { L = loops[i]; if (L.solo && L !== best) L.pause(); }
+    // hand over with a gap: Chrome still counts a just-paused video for about 0.2 s, and a pause and a play in the
+    // same instant are enough to set off the half-rate mode for a few frames
+    if (best && Date.now() - soloPausedAt > 350) best.play();
   }
   MK.effect('loop-video', function (el, o) {
     var v = el.tagName === 'VIDEO' ? el : el.querySelector('video');
@@ -584,20 +610,33 @@
       var pr = v.play();
       if (pr && pr.catch) pr.catch(function () { blocked = true; });
     }
+    function pause() { if (!v.paused) { v.pause(); if (rec.solo) soloPausedAt = Date.now(); } }
+    var rec = { solo: o.opt('solo', true) !== false, want: false, dist: Infinity, play: play, pause: pause };
+    loops.push(rec);
     function check() {
       var r = el.getBoundingClientRect(), vh = window.innerHeight, vw = window.innerWidth;
       var visibleBox = r.width > 0 && r.height > 0;
       if (!loaded && visibleBox && r.bottom > -vh && r.top < vh * 2 && r.right > -vw * 0.5 && r.left < vw * 1.5) { loaded = true; lazySources(v); }
-      want = loaded && visibleBox && !document.hidden && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw;
-      if (want) play(); else if (!v.paused) v.pause();
+      // on screen and actually shown: a loop inside a band or overlay that is faded out (opacity 0, visibility hidden)
+      // still has a box, and would otherwise play unseen; it still preloads above, so it starts at once when shown
+      want = loaded && visibleBox && !document.hidden && r.bottom > 0 && r.top < vh && r.right > 0 && r.left < vw &&
+        (!el.checkVisibility || el.checkVisibility({ opacityProperty: true, visibilityProperty: true }));
+      rec.want = want;
+      rec.dist = want ? Math.hypot(r.left + r.width / 2 - vw / 2, r.top + r.height / 2 - vh / 2) : Infinity;
+      if (rec.solo) pickSolo(); else if (want) play(); else pause();
     }
     o.loop(function (dt) { acc += dt; if (acc >= 0.2) { acc = 0; check(); } });   // 5 checks per second
     o.on(document, 'visibilitychange', check);
-    var retry = function () { if (blocked && want) { blocked = false; play(); } };
+    var retry = function () { if (blocked && want && (!rec.solo || soloOn === rec)) { blocked = false; play(); } };
     o.on(document, 'touchstart', retry, { passive: true });
     o.on(document, 'pointerdown', retry);
     o.on(v, 'playing', function () { el.classList.add('is-playing'); });
-    o.cleanup(function () { v.pause(); el.classList.remove('is-playing'); });
+    o.cleanup(function () {
+      var i = loops.indexOf(rec);
+      if (i > -1) loops.splice(i, 1);
+      if (soloOn === rec) soloOn = null;
+      v.pause(); el.classList.remove('is-playing');
+    });
     check();
   }, {
     reduced: function (el) {

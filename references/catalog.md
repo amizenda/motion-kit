@@ -290,7 +290,11 @@ from the real on-screen box, so it also works inside a transformed parent such a
 </video>
 ```
 Put sources in `data-src` (on `<video>` or `<source>`) so nothing downloads until it is within about a screen.
-Do not add `autoplay`: the effect starts it. Options: `rate` (1). Class `.is-playing` once a frame has played.
+Do not add `autoplay`: the effect starts it. Options: `rate` (1) · `solo` (true: while the page scrolls, only the
+visible loop nearest the centre plays, because two playing videos make Chrome halve the page's frame rate; at rest
+all visible loops play; `false` = always play while visible). Class `.is-playing` once a frame has played. A loop
+that is on screen but hidden (opacity 0 or `visibility: hidden`, e.g. inside a frame-scrub band that has not faded in)
+does not play; it still preloads, so it starts at once when shown.
 Make the loop seamless at the source: start frame = end frame (AI start/end-frame generation), or a forward +
 reversed palindrome (`[0:v]split[a][b];[b]reverse[r];[a][r]concat`). Keep each file small (≈0.5–1.5 MB, 720 wide).
 Cost: low per loop; keep ≤ 4–6 playing at once on phones. Reduced: never plays, so only the poster shows.
